@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:absensi_project/models/app_model.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -248,11 +249,16 @@ class ApiService {
     try {
       final body = <String, dynamic>{'status': status};
 
-      if (status == 'masuk') {
-        if (checkInLat != null) body['check_in_lat'] = checkInLat;
-        if (checkInLng != null) body['check_in_lng'] = checkInLng;
-        if (checkInAddress != null) body['check_in_address'] = checkInAddress;
-      } else if (status == 'izin') {
+      // --- FIX APPLIED HERE ---
+      // Always include location fields, setting to null if not provided.
+      // This is necessary if the backend validates the *presence* of these keys
+      // even when the status is 'izin', and accepts nulls for 'izin'.
+      body['check_in_lat'] = checkInLat;
+      body['check_in_lng'] = checkInLng;
+      body['check_in_address'] = checkInAddress;
+      // --- END FIX ---
+
+      if (status == 'izin') {
         if (alasanIzin != null) body['alasan_izin'] = alasanIzin;
         if (requestDate != null)
           body['tanggal_izin'] = requestDate; // Add tanggal_izin for 'izin'
@@ -266,7 +272,7 @@ class ApiService {
 
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return ApiResponse(
           message: responseBody['message'],
           data: Absence.fromJson(responseBody['data']),
@@ -664,43 +670,6 @@ class ApiService {
       } else {
         return ApiResponse.fromError(
           responseBody['message'] ?? 'Failed to get batches',
-          statusCode: response.statusCode,
-          errors: responseBody['errors'],
-        );
-      }
-    } catch (e) {
-      return ApiResponse.fromError('An error occurred: $e');
-    }
-  }
-
-  // NEW: Submit Izin Request
-  Future<ApiResponse<Absence>> submitIzinRequest({
-    required String date, // Date for the izin request
-    required String alasanIzin, // Reason for the izin request
-  }) async {
-    final url = Uri.parse(
-      '$_baseUrl/izin',
-    ); // Dedicated endpoint for Izin requests
-    final body = {'date': date, 'alasan_izin': alasanIzin};
-
-    try {
-      final response = await http.post(
-        url,
-        headers: _getHeaders(includeAuth: true),
-        body: jsonEncode(body),
-      );
-
-      final Map<String, dynamic> responseBody = jsonDecode(response.body);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return ApiResponse(
-          message: responseBody['message'],
-          data: Absence.fromJson(responseBody['data']),
-          statusCode: response.statusCode,
-        );
-      } else {
-        return ApiResponse.fromError(
-          responseBody['message'] ?? 'Failed to submit Izin request',
           statusCode: response.statusCode,
           errors: responseBody['errors'],
         );

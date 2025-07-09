@@ -1,4 +1,3 @@
-
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/services/api_services.dart';
@@ -82,13 +81,20 @@ class _RequestScreenState extends State<RequestScreen> {
     });
 
     try {
-      // Format the selected date to yyyy-MM-dd as required by the /izin API
-      final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+      // Format the selected date to YYYY-MM-DD
+      final String formattedDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(_selectedDate!);
 
-      // Call the dedicated submitIzinRequest method from ApiService
-      final ApiResponse<Absence> response = await _apiService.submitIzinRequest(
-        date: formattedDate, // Pass the formatted date as 'date'
+      // Call the modified checkIn method for 'izin' status
+      final ApiResponse<Absence> response = await _apiService.checkIn(
+        status: 'izin', // All requests are 'izin' status
         alasanIzin: _reasonController.text.trim(), // Only send the reason text
+        requestDate: formattedDate, // Pass the formatted date
+        // Location parameters are intentionally omitted/null for 'izin' requests
+        checkInLat: null,
+        checkInLng: null,
+        checkInAddress: null,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -138,6 +144,9 @@ class _RequestScreenState extends State<RequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Removed location display as it's not needed for this request type
+            // Removed Request Type dropdown as it's not needed for this request type
+
             // Date Picker using CustomDateInputField
             CustomDateInputField(
               labelText: 'Select Date',
@@ -151,11 +160,14 @@ class _RequestScreenState extends State<RequestScreen> {
             // Reason Text Field using CustomInputField
             CustomInputField(
               controller: _reasonController,
-              labelText: 'Reason for Request', // This becomes the floating label
-              hintText: 'e.g., Annual leave, sick leave, personal matters', // This remains the hint text inside the field
+              labelText:
+                  'Reason for Request', // This becomes the floating label
+              hintText:
+                  'e.g., Annual leave, sick leave, personal matters', // This remains the hint text inside the field
               icon: Icons.edit_note,
               maxLines: 3, // Allow multiline input
-              keyboardType: TextInputType.multiline, // Set keyboard to multiline
+              keyboardType:
+                  TextInputType.multiline, // Set keyboard to multiline
               fillColor: AppColors.inputFill, // Match previous fillColor
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,
