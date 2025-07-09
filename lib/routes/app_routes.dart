@@ -11,7 +11,8 @@ class AppRoutes {
   static const personReport = '/report/person';
   static const profile = '/profile';
   static const resetPassword = '/reset_password';
-  static const otpVerification = '/otp_verification';
+  static const resetPasswordWithOtp = '/reset_password_with_otp';
+
   static const ForgotPasswordEmail = '/forgot_password_email';
   // The following routes are removed as they are now managed internally by MainScreen's IndexedStack
   // static const report = '/report';

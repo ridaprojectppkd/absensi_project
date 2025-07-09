@@ -1,155 +1,198 @@
-// lib/screens/auth/reset_password_screen.dart
-
+import 'package:absensi_project/constants/app_colors.dart';
+import 'package:absensi_project/constants/app_style.dart';
+import 'package:absensi_project/routes/app_routes.dart';
 import 'package:absensi_project/services/api_services.dart';
+import 'package:absensi_project/widgets/custom_input_field.dart';
+import 'package:absensi_project/widgets/primary_button.dart';
+
 import 'package:flutter/material.dart';
-import 'package:absensi_project/models/app_model.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
-  final String email;
-  final String otp;
+class ResetPasswordWithOtpScreen extends StatefulWidget {
+  final String email; // Email passed from ForgotPasswordScreen
 
-  const ResetPasswordScreen({Key? key, required this.email, required this.otp}) : super(key: key);
+  const ResetPasswordWithOtpScreen({super.key, required this.email});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<ResetPasswordWithOtpScreen> createState() =>
+      _ResetPasswordWithOtpScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordWithOtpScreenState
+    extends State<ResetPasswordWithOtpScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _otpController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
+  Future<void> _resetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final String otp = _otpController.text.trim();
+      final String newPassword = _newPasswordController.text.trim();
+      final String confirmPassword = _confirmPasswordController.text.trim();
+
+      // First, verify OTP (though the reset-password endpoint might handle this implicitly)
+      // According to your API, the /reset-password endpoint takes email, otp, password, and password_confirmation
+      // so we can directly call resetPassword.
+      final response = await _apiService.resetPassword(
+        email: widget.email,
+        otp: otp,
+        newPassword: newPassword,
+        newPasswordConfirmation: confirmPassword,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response.statusCode == 200) {
+        _showSnackBar(response.message);
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
+        }
+      } else {
+        String errorMessage = response.message;
+        if (response.errors != null) {
+          response.errors!.forEach((key, value) {
+            errorMessage += '\n$key: ${(value as List).join(', ')}';
+          });
+        }
+        _showSnackBar(errorMessage);
+      }
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   void dispose() {
+    _otpController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _resetPassword() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    final String newPassword = _newPasswordController.text.trim();
-    final String confirmPassword = _confirmPasswordController.text.trim();
-
-    if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      setState(() {
-        _errorMessage = 'Please fill in both password fields.';
-        _isLoading = false;
-      });
-      return;
-    }
-
-    if (newPassword != confirmPassword) {
-      setState(() {
-        _errorMessage = 'Passwords do not match.';
-        _isLoading = false;
-      });
-      return;
-    }
-
-    final ApiResponse<void> response = await _apiService.resetPassword(
-      email: widget.email,
-      otp: widget.otp, // Use the OTP passed from the previous screen
-      newPassword: newPassword,
-      newPasswordConfirmation: confirmPassword,
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response.message ?? 'Password reset successfully!')),
-      );
-      // Navigate back to the login screen or home screen
-      // Using popUntil to go back to the very first route (likely login)
-      Navigator.popUntil(context, (route) => route.isFirst);
-    } else {
-      setState(() {
-        _errorMessage = response.message ?? 'Failed to reset password. Please try again.';
-        if (response.errors != null && response.errors!.isNotEmpty) {
-          _errorMessage = response.errors!.values.first[0];
-        }
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Reset Password'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Set your new password for ${widget.email}.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _newPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              const Text(
+                "Enter OTP and New Password",
+                style: AppTextStyles.heading,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "An OTP has been sent to ${widget.email}. Please enter it below along with your new password.",
+                style: AppTextStyles.normal,
+              ),
+              const SizedBox(height: 30),
+              CustomInputField(
+                controller: TextEditingController(
+                  text: widget.email,
+                ), // Display email, not editable
+                hintText: 'Email',
+                labelText: 'Email Address',
+                icon: Icons.email_outlined,
+                readOnly: true,
+              ),
+              const SizedBox(height: 20),
+              CustomInputField(
+                controller: _otpController,
+                hintText: 'OTP',
+                labelText: 'One-Time Password (OTP)',
+                icon: Icons.vpn_key_outlined,
+                keyboardType: TextInputType.number,
+                customValidator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'OTP cannot be empty';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              CustomInputField(
+                controller: _newPasswordController,
+                hintText: 'New Password',
                 labelText: 'New Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.lock),
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscureText: !_isNewPasswordVisible,
+                toggleVisibility: () {
+                  setState(() {
+                    _isNewPasswordVisible = !_isNewPasswordVisible;
+                  });
+                },
+                customValidator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'New password cannot be empty';
+                  }
+                  if (value.length < 8) {
+                    return 'Password must be at least 8 characters long';
+                  }
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: true,
-              decoration: InputDecoration(
+              const SizedBox(height: 20),
+              CustomInputField(
+                controller: _confirmPasswordController,
+                hintText: 'Confirm New Password',
                 labelText: 'Confirm New Password',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                prefixIcon: const Icon(Icons.lock_reset),
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscureText: !_isConfirmPasswordVisible,
+                toggleVisibility: () {
+                  setState(() {
+                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                  });
+                },
+                customValidator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Confirm password cannot be empty';
+                  }
+                  if (value != _newPasswordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
               ),
-            ),
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _resetPassword,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-              ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text(
-                      'Reset Password',
-                      style: TextStyle(fontSize: 18),
+              const SizedBox(height: 30),
+              _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    )
+                  : PrimaryButton(
+                      label: 'Reset Password',
+                      onPressed: _resetPassword,
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

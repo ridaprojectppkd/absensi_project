@@ -1,6 +1,8 @@
 // lib/services/api_service.dart
 import 'dart:convert';
+
 import 'package:absensi_project/models/app_model.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -165,7 +167,7 @@ class ApiService {
     required String email,
     required String otp,
   }) async {
-    final url = Uri.parse('$_baseUrl/forgot-password');
+    final url = Uri.parse('$_baseUrl/verify-otp');
     try {
       final response = await http.post(
         url,

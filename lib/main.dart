@@ -6,7 +6,7 @@ import 'package:absensi_project/screens/buttom_navigator_bar.dart';
 import 'package:absensi_project/screens/forgot_password.dart.dart';
 import 'package:absensi_project/screens/reset_password_screen.dart';
 import 'package:absensi_project/screens/splashsceen.dart';
-import 'package:absensi_project/screens/otp_verification_screen.dart';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -32,9 +32,11 @@ class MyApp extends StatelessWidget {
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.main: (context) => MainBottomNavigationBar(),
         AppRoutes.request: (context) => RequestScreen(),
-        AppRoutes.otpVerification: (context) => const OtpVerificationScreen(email: '',),
-        AppRoutes.ForgotPasswordEmail: (context) => const ForgotPasswordEmailScreen(),
-        AppRoutes.resetPassword: (context) => ResetPasswordScreen(email: '', otp: '',)// Pass email and OTP as needed
+      AppRoutes.ForgotPasswordEmail: (context) => const ForgotPasswordScreen(),
+        AppRoutes.resetPasswordWithOtp: (context) {
+          final String email = ModalRoute.of(context)?.settings.arguments as String;
+          return ResetPasswordWithOtpScreen(email: email);
+        },
         // AppRoutes.attendanceList: (context) => AttendanceListScreen(),
         // AppRoutes.report: (context) => const PersonReportScreen(),
         // AppRoutes.profile: (context) => const ProfileScreen(),
