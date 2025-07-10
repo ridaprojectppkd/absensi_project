@@ -75,12 +75,16 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: const [
-              Icon(Icons.access_alarm, size: 90, color: AppColors.primary),
+              Image(
+                image: AssetImage('assets/images/logo.png'),
+                width: 90,
+                height: 90,
+              ),
               SizedBox(height: 20),
-              Text('ClockIn', style: AppTextStyles.heading),
+              Text('AbsenSee', style: AppTextStyles.heading),
               SizedBox(height: 10),
               Text(
-                'Welcome to the future of attendance!',
+                'Selamat Datang!',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.normal,
               ),

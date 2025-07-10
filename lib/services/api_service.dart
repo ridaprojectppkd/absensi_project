@@ -671,7 +671,7 @@ class ApiService {
         return ApiResponse.fromError(
           responseBody['message'] ?? 'Failed to get batches',
           statusCode: response.statusCode,
-          errors: responseBody['errors'],
+          errors: responseBody['errors'], 
         );
       }
     } catch (e) {
