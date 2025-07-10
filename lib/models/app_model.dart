@@ -203,6 +203,7 @@ class Absence {
   final double? checkInLng;
   final double? checkOutLat;
   final double? checkOutLng;
+  final DateTime? attendanceDate;
 
   Absence({
     required this.id,
@@ -221,6 +222,7 @@ class Absence {
     this.checkInLng,
     this.checkOutLat,
     this.checkOutLng,
+    this.attendanceDate,
   });
 
   factory Absence.fromJson(Map<String, dynamic> json) {
@@ -259,6 +261,9 @@ class Absence {
       checkInLng: (json['check_in_lng'] as num?)?.toDouble(),
       checkOutLat: (json['check_out_lat'] as num?)?.toDouble(),
       checkOutLng: (json['check_out_lng'] as num?)?.toDouble(),
+      attendanceDate: json['attendance_date'] != null
+          ? DateTime.parse(json['attendance_date'] as String)
+          : null,
     );
   }
 
@@ -285,13 +290,14 @@ class Absence {
 }
 
 class AbsenceToday {
-  final String? tanggal; // Made nullable
+  final DateTime? tanggal; // Made nullable
   final DateTime? jamMasuk; // Made nullable
   final DateTime? jamKeluar;
   final String? alamatMasuk; // Made nullable
   final String? alamatKeluar;
   final String? status; // Made nullable
   final String? alasanIzin;
+  final DateTime? attendanceDate;
 
   AbsenceToday({
     this.tanggal, // Removed required
@@ -301,29 +307,51 @@ class AbsenceToday {
     this.alamatKeluar,
     this.status, // Removed required
     this.alasanIzin,
+    this.attendanceDate,
   });
 
   factory AbsenceToday.fromJson(Map<String, dynamic> json) {
+    final String? attendanceDateStr = json['attendance_date'] as String?;
+    final String? checkInTimeStr = json['check_in_time'] as String?;
+    final String? checkOutTimeStr = json['check_out_time'] as String?;
+
+    DateTime? parsedJamMasuk;
+    if (attendanceDateStr != null && checkInTimeStr != null) {
+      try {
+        parsedJamMasuk = DateTime.parse('$attendanceDateStr $checkInTimeStr');
+      } catch (e) {
+        print('Error parsing jamMasuk: $e');
+      }
+    }
+
+    DateTime? parsedJamKeluar;
+    if (attendanceDateStr != null && checkOutTimeStr != null) {
+      try {
+        parsedJamKeluar = DateTime.parse('$attendanceDateStr $checkOutTimeStr');
+      } catch (e) {
+        print('Error parsing jamKeluar: $e');
+      }
+    }
+
     return AbsenceToday(
-      tanggal:
-          json['tanggal'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      jamMasuk:
-          json['jam_masuk'] !=
-              null // Added null-check before parsing
-          ? DateTime.parse(json['jam_masuk'] as String)
-          : null,
-      jamKeluar: json['jam_keluar'] != null
-          ? DateTime.parse(json['jam_keluar'] as String)
-          : null,
+      tanggal: attendanceDateStr != null
+          ? DateTime.parse(attendanceDateStr)
+          : null, // Parse as DateTime
+      jamMasuk: parsedJamMasuk,
+      jamKeluar: parsedJamKeluar,
       alamatMasuk:
-          json['alamat_masuk'] as String? ??
-          'N/A', // Added null-aware cast and fallback
-      alamatKeluar: json['alamat_keluar'] as String?,
+          json['check_in_address'] as String? ??
+          'N/A', // Changed from 'alamat_masuk' to 'check_in_address'
+      alamatKeluar:
+          json['check_out_address']
+              as String?, // Changed from 'alamat_keluar' to 'check_out_address'
       status:
           json['status'] as String? ??
           'N/A', // Added null-aware cast and fallback
       alasanIzin: json['alasan_izin'] as String?,
+      attendanceDate: attendanceDateStr != null
+          ? DateTime.parse(attendanceDateStr)
+          : null,
     );
   }
 }

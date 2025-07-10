@@ -240,22 +240,26 @@ class ApiService {
     double? checkInLat, // Made nullable
     double? checkInLng, // Made nullable
     String? checkInAddress, // Made nullable
+    String? checkInTime,
     required String status, // "masuk" or "izin"
     String? alasanIzin, // Required if status is "izin"
-    String? requestDate, // New: Required if status is "izin"
+    required String attendanceDate,
   }) async {
     final url = Uri.parse('$_baseUrl/absen/check-in');
     try {
-      final body = <String, dynamic>{'status': status};
+      final body = <String, dynamic>{
+        'status': status,
+        'attendance_date': attendanceDate,
+        'check_in': checkInTime,
+      };
 
       if (status == 'masuk') {
         if (checkInLat != null) body['check_in_lat'] = checkInLat;
         if (checkInLng != null) body['check_in_lng'] = checkInLng;
         if (checkInAddress != null) body['check_in_address'] = checkInAddress;
+        if (checkInTime != null) body['check_in'] = checkInTime;
       } else if (status == 'izin') {
         if (alasanIzin != null) body['alasan_izin'] = alasanIzin;
-        if (requestDate != null)
-          body['tanggal_izin'] = requestDate; // Add tanggal_izin for 'izin'
       }
 
       final response = await http.post(
@@ -288,6 +292,8 @@ class ApiService {
     required double checkOutLat,
     required double checkOutLng,
     required String checkOutAddress,
+    required String attendanceDate,
+    required String checkOutTime,
   }) async {
     final url = Uri.parse('$_baseUrl/absen/check-out');
     try {
@@ -298,6 +304,8 @@ class ApiService {
           'check_out_lat': checkOutLat,
           'check_out_lng': checkOutLng,
           'check_out_address': checkOutAddress,
+          'attendance_date': attendanceDate,
+          'check_out': checkOutTime,
         }),
       );
 
@@ -673,7 +681,7 @@ class ApiService {
     }
   }
 
-  // NEW: Submit Izin Request
+  // Submit Izin Request
   Future<ApiResponse<Absence>> submitIzinRequest({
     required String date, // Date for the izin request
     required String alasanIzin, // Reason for the izin request

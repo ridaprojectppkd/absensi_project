@@ -230,11 +230,21 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
+       final String formattedAttendanceDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime.now());
+      // Format the current time to 'HH:mm' string for the API
+      final String formattedCheckInTime = DateFormat(
+        'HH:mm',
+      ).format(DateTime.now());
+
       final ApiResponse<Absence> response = await _apiService.checkIn(
         checkInLat: _currentPosition!.latitude,
         checkInLng: _currentPosition!.longitude,
         checkInAddress: _location,
         status: 'masuk', // Assuming 'masuk' for regular check-in
+        attendanceDate: formattedAttendanceDate,
+        checkInTime: formattedCheckInTime,
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -282,10 +292,21 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
+ final String formattedAttendanceDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime.now());
+      // Format the current time to 'HH:mm' string for the API
+      final String formattedCheckOutTime = DateFormat(
+        'HH:mm',
+      ).format(DateTime.now());
+
+
       final ApiResponse<Absence> response = await _apiService.checkOut(
         checkOutLat: _currentPosition!.latitude,
         checkOutLng: _currentPosition!.longitude,
         checkOutAddress: _location,
+         attendanceDate: formattedAttendanceDate,
+        checkOutTime: formattedCheckOutTime,
       );
 
       if (response.statusCode == 200 && response.data != null) {
