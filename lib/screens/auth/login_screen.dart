@@ -1,4 +1,3 @@
-
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/constants/app_style.dart';
 import 'package:absensi_project/models/app_model.dart';
@@ -153,8 +152,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, AppRoutes.ForgotPasswordEmail),
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.ForgotPasswordEmail,
+                    ),
                     child: const Text(
                       "Forgot Password?",
                       style: TextStyle(
