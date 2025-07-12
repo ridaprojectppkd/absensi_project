@@ -36,8 +36,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       0; // Will be derived from presentCount for simplicity
   String _totalWorkingHours = '0hr';
 
-  // Data for Pie Chart
-  List<PieChartSectionData> _pieChartSections = [];
+  // Data for Bar Chart
+  List<BarChartGroupData> _barChartGroups = [];
 
   @override
   void initState() {
@@ -85,7 +85,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       } else {
         print('Failed to get absence stats: ${statsResponse.message}');
         _updateSummaryCounts(0, 0, 0, 0, '0hr'); // Reset counts on error
-        _updatePieChartData(0, 0, 0); // Reset pie chart data on error
+        _updateBarChartData(0, 0, 0); // Reset bar chart data on error
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -146,12 +146,12 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         _totalWorkingHours = formattedTotalWorkingHours;
       });
 
-      // Update pie chart data after all counts are finalized
-      _updatePieChartData(_presentCount, _absentCount, _lateInCount);
+      // Update bar chart data after all counts are finalized
+      _updateBarChartData(_presentCount, _absentCount, _lateInCount);
     } catch (e) {
       print('Error fetching and calculating monthly reports: $e');
       _updateSummaryCounts(0, 0, 0, 0, '0hr'); // Reset counts on error
-      _updatePieChartData(0, 0, 0); // Reset pie chart data on error
+      _updateBarChartData(0, 0, 0); // Reset bar chart data on error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('An error occurred loading reports: $e')),
@@ -177,84 +177,77 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     });
   }
 
-  // New method to update pie chart data
-  void _updatePieChartData(int presentCount, int absentCount, int lateInCount) {
-    final total = presentCount + absentCount + lateInCount;
-    if (total == 0) {
-      setState(() {
-        _pieChartSections = [];
-      });
-      return;
-    }
-
-    const Color presentColor = Colors.green;
-    const Color absentColor = Colors.red;
-    const Color lateColor = Colors.orange;
-
+  // New method to update bar chart data
+  void _updateBarChartData(int presentCount, int absentCount, int lateInCount) {
     setState(() {
-      _pieChartSections = [
-        if (presentCount > 0)
-          PieChartSectionData(
-            color: presentColor,
-            value: presentCount.toDouble(),
-            title: '${(presentCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+      _barChartGroups = [
+        BarChartGroupData(
+          x: 0,
+          barRods: [
+            BarChartRodData(
+              toY: presentCount.toDouble(),
+              color: Colors.green,
+              width: 20,
+              borderRadius: BorderRadius.circular(4),
             ),
-            badgeWidget: _buildBadge('Present', presentColor),
-            badgePositionPercentageOffset: .98,
-          ),
-        if (absentCount > 0)
-          PieChartSectionData(
-            color: absentColor,
-            value: absentCount.toDouble(),
-            title: '${(absentCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          ],
+          showingTooltipIndicators: [0],
+        ),
+        BarChartGroupData(
+          x: 1,
+          barRods: [
+            BarChartRodData(
+              toY: absentCount.toDouble(),
+              color: Colors.red,
+              width: 20,
+              borderRadius: BorderRadius.circular(4),
             ),
-            badgeWidget: _buildBadge('Absent', absentColor),
-            badgePositionPercentageOffset: .98,
-          ),
-        if (lateInCount > 0)
-          PieChartSectionData(
-            color: lateColor,
-            value: lateInCount.toDouble(),
-            title: '${(lateInCount / total * 100).toStringAsFixed(1)}%',
-            radius: 50,
-            titleStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          ],
+          showingTooltipIndicators: [0],
+        ),
+        BarChartGroupData(
+          x: 2,
+          barRods: [
+            BarChartRodData(
+              toY: lateInCount.toDouble(),
+              color: Colors.orange,
+              width: 20,
+              borderRadius: BorderRadius.circular(4),
             ),
-            badgeWidget: _buildBadge('Late', lateColor),
-            badgePositionPercentageOffset: .98,
-          ),
+          ],
+          showingTooltipIndicators: [0],
+        ),
       ];
     });
   }
 
-  // Helper for PieChart badges (labels)
-  Widget _buildBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+  // Helper for BarChart titles (labels)
+  Widget getTitles(double value, TitleMeta meta) {
+    // Re-added 'TitleMeta meta'
+    const style = TextStyle(
+      color: AppColors.textDark,
+      fontWeight: FontWeight.bold,
+      fontSize: 14,
+    );
+    String text;
+    switch (value.toInt()) {
+      case 0:
+        text = 'Present';
+        break;
+      case 1:
+        text = 'Absent';
+        break;
+      case 2:
+        text = 'Late';
+        break;
+      default:
+        text = '';
+        break;
+    }
+    return SideTitleWidget(
+      meta: meta,
+      space: 4.0,
+      child: Text(text, style: style),
     );
   }
 
@@ -403,7 +396,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                             Text(
                               DateFormat(
                                 'MMM BCE', // Corrected format string
-                              ).format(_selectedMonth).toUpperCase(),
+                                ).format(_selectedMonth).toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textDark,
@@ -478,27 +471,68 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                 ),
               ),
               Expanded(
-                child: AspectRatio(
-                  aspectRatio: 1.5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: PieChart(
-                      PieChartData(
-                        sections: _pieChartSections,
-                        borderData: FlBorderData(show: false),
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 40,
-                        pieTouchData: PieTouchData(
-                          touchCallback:
-                              (FlTouchEvent event, pieTouchResponse) {
-                                setState(() {
-                                  if (!event.isInterestedForInteractions ||
-                                      pieTouchResponse == null ||
-                                      pieTouchResponse.touchedSection == null) {
-                                    return;
-                                  }
-                                });
-                              },
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: BarChart(
+                    BarChartData(
+                      barGroups: _barChartGroups,
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: getTitles,
+                            reservedSize: 38,
+                          ),
+                        ),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      gridData: const FlGridData(show: false),
+                      barTouchData: BarTouchData(
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            String label;
+                            switch (group.x.toInt()) {
+                              case 0:
+                                label = 'Present';
+                                break;
+                              case 1:
+                                label = 'Absent';
+                                break;
+                              case 2:
+                                label = 'Late';
+                                break;
+                              default:
+                                label = '';
+                            }
+                            return BarTooltipItem(
+                              '$label\n',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                              children: <TextSpan>[
+                                TextSpan(
+                                  text: rod.toY.toStringAsFixed(0),
+                                  style: const TextStyle(
+                                    color: Colors.yellow,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),

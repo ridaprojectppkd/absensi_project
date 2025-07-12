@@ -4,11 +4,13 @@ import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/buttom_navigator_bar.dart';
+
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart'; // For reverse geocoding
 import 'package:geolocator/geolocator.dart'; // For geolocation
 import 'package:intl/intl.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Import for Google Maps
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -34,6 +36,11 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _permissionGranted = false;
   bool _isCheckingInOrOut = false; // To prevent multiple taps during API calls
 
+  // Google Maps related state
+  GoogleMapController? _mapController;
+  final Set<Marker> _markers = {};
+  LatLng? _initialCameraPosition; // To store the initial map center
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _mapController?.dispose(); // Dispose map controller
     widget.refreshNotifier.removeListener(_handleRefreshSignal);
     super.dispose();
   }
@@ -151,6 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _currentPosition = position;
         _permissionGranted = true;
+        _initialCameraPosition = LatLng(position.latitude, position.longitude);
+        _addMarker(
+          LatLng(position.latitude, position.longitude),
+          'current_location',
+          'Your Current Location',
+        );
       });
       await _getAddressFromLatLng(position);
     } catch (e) {
@@ -182,6 +196,27 @@ class _HomeScreenState extends State<HomeScreen> {
         _location = 'Address not found';
       });
     }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    if (_initialCameraPosition != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
+      );
+    }
+  }
+
+  void _addMarker(LatLng position, String markerId, String title) {
+    setState(() {
+      _markers.add(
+        Marker(
+          markerId: MarkerId(markerId),
+          position: position,
+          infoWindow: InfoWindow(title: title),
+        ),
+      );
+    });
   }
 
   Future<void> _fetchAttendanceData() async {
@@ -230,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-       final String formattedAttendanceDate = DateFormat(
+      final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
       // Format the current time to 'HH:mm' string for the API
@@ -292,7 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
- final String formattedAttendanceDate = DateFormat(
+      final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
       // Format the current time to 'HH:mm' string for the API
@@ -300,12 +335,11 @@ class _HomeScreenState extends State<HomeScreen> {
         'HH:mm',
       ).format(DateTime.now());
 
-
       final ApiResponse<Absence> response = await _apiService.checkOut(
         checkOutLat: _currentPosition!.latitude,
         checkOutLng: _currentPosition!.longitude,
         checkOutAddress: _location,
-         attendanceDate: formattedAttendanceDate,
+        attendanceDate: formattedAttendanceDate,
         checkOutTime: formattedCheckOutTime,
       );
 
@@ -418,6 +452,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines:
+                            2, // Mengizinkan teks untuk membungkus hingga 2 baris
+                        overflow: TextOverflow
+                            .ellipsis, // Menambahkan elipsis jika masih meluap
                       ),
                     ],
                   ),
@@ -591,7 +629,71 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20), // Add spacing before the map
+            // --- START: Google Map Widget ---
+            if (_permissionGranted && _initialCameraPosition != null)
+              Container(
+                height: 200, // Set a fixed height for the map
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.textLight, width: 1),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: GoogleMap(
+                    onMapCreated: _onMapCreated,
+                    initialCameraPosition: CameraPosition(
+                      target: _initialCameraPosition!,
+                      zoom: 15,
+                    ),
+                    markers: _markers,
+                    myLocationEnabled: true, // Show user's current location dot
+                    myLocationButtonEnabled: true, // Show button to recenter
+                    zoomControlsEnabled: false, // Hide default zoom controls
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.textLight, width: 1),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.map_outlined,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _location, // Display current location status
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (!_permissionGranted) // Offer to re-check permissions
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10.0),
+                          child: ElevatedButton(
+                            onPressed: _determinePosition,
+                            child: const Text('Retry Location'),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // --- END: Google Map Widget ---
+            const SizedBox(height: 20), // Add spacing after the map
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -656,6 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
             const Divider(color: Colors.grey),
             const SizedBox(height: 10),
