@@ -396,7 +396,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                             Text(
                               DateFormat(
                                 'MMM BCE', // Corrected format string
-                                ).format(_selectedMonth).toUpperCase(),
+                              ).format(_selectedMonth).toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textDark,
@@ -427,11 +427,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   childAspectRatio: 1.0,
                   children: [
                     _buildSummaryCard(
-                      'Total Working Days',
-                      _totalWorkingDaysInMonth.toString().padLeft(2, '0'),
-                      Colors.blueGrey,
-                    ),
-                    _buildSummaryCard(
                       'Total Present Days',
                       _presentCount.toString().padLeft(2, '0'),
                       Colors.green,
@@ -446,19 +441,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                       _lateInCount.toString().padLeft(2, '0'),
                       Colors.orange,
                     ),
-                    _buildSummaryCard(
-                      'Total Working Hours',
-                      _totalWorkingHours,
-                      AppColors.primary,
-                    ),
-                    _buildSummaryCard(
-                      'Overall Attendance %',
-                      '${(_presentCount / (_totalWorkingDaysInMonth == 0 ? 1 : _totalWorkingDaysInMonth) * 100).toStringAsFixed(0)}%',
-                      Colors.teal,
-                    ),
                   ],
                 ),
               ),
+              SizedBox(height: 21),
               const Padding(
                 padding: EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 8.0),
                 child: Text(
@@ -470,9 +456,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   ),
                 ),
               ),
+              SizedBox(height: 150), // Spacer for bar chart
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(12.0),
                   child: BarChart(
                     BarChartData(
                       barGroups: _barChartGroups,
@@ -483,7 +470,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             getTitlesWidget: getTitles,
-                            reservedSize: 38,
+                            reservedSize: 30,
                           ),
                         ),
                         leftTitles: const AxisTitles(
