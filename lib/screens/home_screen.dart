@@ -235,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    // Fetch attendance statistics
+    // Fetch attendance statistics////////////////////////////////////////////diganti get histori untuk mengikuti tanggal
     final ApiResponse<AbsenceStats> statsResponse = await _apiService
         .getAbsenceStats();
     if (statsResponse.statusCode == 200 && statsResponse.data != null) {
@@ -511,12 +511,13 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildAttendanceSummary(),
             ],
           ),
+          /////////////////////////tombol request///////////////
           Positioned(
             bottom: 10,
             left: 0,
             right: 0,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: ElevatedButton.icon(
                 onPressed: () async {
                   final result = await Navigator.push(
@@ -529,9 +530,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         true; // Signal AttendanceListScreen
                   }
                 },
-                icon: const Icon(Icons.add_task, color: AppColors.primary),
+                icon: const Icon(Icons.add, color: AppColors.primary),
                 label: const Text(
-                  'Request',
+                  'Request Izin',
                   style: TextStyle(color: AppColors.primary, fontSize: 18),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -934,7 +935,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 15),
                   Align(
                     alignment: Alignment.bottomRight,
                     child: Text(

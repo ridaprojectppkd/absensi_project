@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:math'; // Import for pi
 
 import 'package:absensi_project/constants/app_colors.dart';
-import 'package:absensi_project/models/app_model.dart';
-import 'package:absensi_project/services/api_services.dart';
+import 'package:absensi_project/models/app_model.dart'; // Pastikan ini mengimpor model yang benar
+import 'package:absensi_project/services/api_services.dart'; // Pastikan ini mengimpor layanan API
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +21,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   final ApiService _apiService = ApiService();
 
   late Future<void>
-  _reportDataFuture; // Changed to void as we update state directly
+      _reportDataFuture; // Changed to void as we update state directly
   DateTime _selectedMonth = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -30,10 +31,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   // Summary counts for the selected month - Initialized directly to avoid LateInitializationError
   int _presentCount = 0;
   int _absentCount =
-      0; // Will now include all non-regular attendance types (izin)
-  int _lateInCount = 0; // Mapped from total_absen in AbsenceStats
+      0; // Will now include all non-regular attendance types (izin/sakit)
+  int _lateInCount = 0; // Calculated from check-in times in Absence history
   int _totalWorkingDaysInMonth =
-      0; // Will be derived from presentCount for simplicity
+      0; // Will be derived from the number of days in the selected month
   String _totalWorkingHours = '0hr';
 
   // Data for Bar Chart
@@ -68,69 +69,54 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   // Fetches attendance data and calculates monthly summaries
   Future<void> _fetchAndCalculateMonthlyReports() async {
     try {
-      // 1. Fetch Absence Stats for summary counts
-      final ApiResponse<AbsenceStats> statsResponse = await _apiService
-          .getAbsenceStats();
-      if (statsResponse.statusCode == 200 && statsResponse.data != null) {
-        final AbsenceStats stats = statsResponse.data!;
-        setState(() {
-          _presentCount = stats.totalMasuk;
-          _absentCount = stats
-              .totalIzin; // Assuming total_izin covers all types of absences/leaves
-          _lateInCount =
-              stats.totalAbsen; // Assuming total_absen covers late entries
-          _totalWorkingDaysInMonth = stats
-              .totalMasuk; // Simplified: Total working days = total present days
-        });
-      } else {
-        print('Failed to get absence stats: ${statsResponse.message}');
-        _updateSummaryCounts(0, 0, 0, 0, '0hr'); // Reset counts on error
-        _updateBarChartData(0, 0, 0); // Reset bar chart data on error
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to load summary: ${statsResponse.message}'),
-            ),
-          );
-        }
-        return; // Exit if stats fetching fails
-      }
-
-      // 2. Fetch Absence History for total working hours calculation
+      // Calculate start and end dates for the selected month
       final String startDate = DateFormat('yyyy-MM-01').format(_selectedMonth);
       final String endDate = DateFormat('yyyy-MM-dd').format(
         DateTime(
           _selectedMonth.year,
           _selectedMonth.month + 1,
           0,
-        ), // Last day of the month
+        ), // Last day of the selected month
       );
 
+      // Fetch absence history for the selected month
       final ApiResponse<List<Absence>> historyResponse = await _apiService
           .getAbsenceHistory(startDate: startDate, endDate: endDate);
 
+      // Re-initialize counts for the current month
+      int currentMonthPresentCount = 0;
+      int currentMonthAbsentCount = 0;
+      int currentMonthLateCount = 0;
       Duration totalWorkingDuration = Duration.zero;
+
       if (historyResponse.statusCode == 200 && historyResponse.data != null) {
         for (var absence in historyResponse.data!) {
-          // Only count working hours for 'masuk' entries that have both checkIn and checkOut
-          if (absence.status?.toLowerCase() ==
-                  'masuk' && // Safely call toLowerCase
-              absence.checkIn != null && // Added null check for checkIn
-              absence.checkOut != null) {
-            totalWorkingDuration += absence.checkOut!.difference(
-              absence.checkIn!, // Added null assertion for checkIn
-            );
+          // Count for bar chart and working hours
+          if (absence.status?.toLowerCase() == 'masuk') {
+            currentMonthPresentCount++;
+            if (absence.checkIn != null && absence.checkOut != null) {
+              totalWorkingDuration += absence.checkOut!.difference(absence.checkIn!);
+              // ASUMPSI UNTUK TERLAMBAT: Ini mengasumsikan 'terlambat' ditentukan oleh waktu check-in setelah jam 8:00 AM.
+              // Jika model `Absence` Anda memiliki flag `isLate` eksplisit atau status 'terlambat' yang berbeda, gunakan itu sebagai gantinya.
+              // Untuk demonstrasi, kita akan memeriksa jika checkIn setelah 08:00 AM.
+              if (absence.checkIn!.hour > 8 || (absence.checkIn!.hour == 8 && absence.checkIn!.minute > 0)) {
+                currentMonthLateCount++;
+              }
+            }
+          } else if (absence.status?.toLowerCase() == 'izin' || absence.status?.toLowerCase() == 'sakit') {
+            // Assuming 'izin' and 'sakit' are considered absent types
+            currentMonthAbsentCount++;
           }
         }
       } else {
         print(
-          'Failed to get absence history for working hours: ${historyResponse.message}',
+          'Failed to get absence history for reports: ${historyResponse.message}',
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Failed to load working hours: ${historyResponse.message}',
+                'Failed to load attendance history: ${historyResponse.message}',
               ),
             ),
           );
@@ -142,8 +128,13 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       String formattedTotalWorkingHours =
           '${totalHours}hr ${remainingMinutes}min';
 
+      // Update state with month-specific counts
       setState(() {
+        _presentCount = currentMonthPresentCount;
+        _absentCount = currentMonthAbsentCount;
+        _lateInCount = currentMonthLateCount;
         _totalWorkingHours = formattedTotalWorkingHours;
+        _totalWorkingDaysInMonth = _getDaysInMonth(_selectedMonth.year, _selectedMonth.month);
       });
 
       // Update bar chart data after all counts are finalized
@@ -158,6 +149,11 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         );
       }
     }
+  }
+
+  // Helper function to get the number of days in a given month
+  int _getDaysInMonth(int year, int month) {
+    return DateTime(year, month + 1, 0).day;
   }
 
   // Updates the state variables for summary counts
@@ -177,7 +173,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     });
   }
 
-  // New method to update bar chart data
+  // Method to update bar chart data
   void _updateBarChartData(int presentCount, int absentCount, int lateInCount) {
     setState(() {
       _barChartGroups = [
@@ -223,7 +219,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
 
   // Helper for BarChart titles (labels)
   Widget getTitles(double value, TitleMeta meta) {
-    // Re-added 'TitleMeta meta'
     const style = TextStyle(
       color: AppColors.textDark,
       fontWeight: FontWeight.bold,
@@ -289,51 +284,56 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     }
   }
 
-  // Helper widget to build summary cards
-  Widget _buildSummaryCard(String title, dynamic value, Color color) {
+  // Helper widget to build summary cards with circular progress indicator
+  Widget _buildSummaryCard(String title, int count, Color color, int totalDays) {
+    // Calculate percentage, ensuring totalDays is not zero to avoid division by zero
+    double percentage = totalDays > 0 ? (count / totalDays) : 0.0;
+    if (percentage > 1.0) percentage = 1.0; // Cap percentage at 100%
+
     return Expanded(
-      child: Card(
-        color: AppColors.background,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              height: 5.0,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
+            SizedBox(
+              width: 80, // Adjust size as needed
+              height: 80, // Adjust size as needed
+              child: CustomPaint(
+                painter: _CircularProgressPainter(
+                  progress: percentage,
+                  color: color,
+                ),
+                child: Center(
+                  child: Text(
+                    count.toString(),
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      value.toString(),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 28, // Slightly smaller for fit
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 12, // Smaller font for title
               ),
             ),
           ],
@@ -395,7 +395,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                           children: [
                             Text(
                               DateFormat(
-                                'MMM BCE', // Corrected format string
+                                'MMM yyyy', // Corrected format string to show year
                               ).format(_selectedMonth).toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -427,24 +427,27 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   childAspectRatio: 1.0,
                   children: [
                     _buildSummaryCard(
-                      'Total Present Days',
-                      _presentCount.toString().padLeft(2, '0'),
+                      'Present',
+                      _presentCount,
                       Colors.green,
+                      _totalWorkingDaysInMonth,
                     ),
                     _buildSummaryCard(
-                      'Total Absent Days',
-                      _absentCount.toString().padLeft(2, '0'),
+                      'Absent',
+                      _absentCount,
                       Colors.red,
+                      _totalWorkingDaysInMonth,
                     ),
                     _buildSummaryCard(
-                      'Total Late Entries',
-                      _lateInCount.toString().padLeft(2, '0'),
+                      'Late',
+                      _lateInCount,
                       Colors.orange,
+                      _totalWorkingDaysInMonth,
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 21),
+              const SizedBox(height: 21),
               const Padding(
                 padding: EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 8.0),
                 child: Text(
@@ -456,7 +459,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 150), // Spacer for bar chart
+              const SizedBox(height: 150), // Spacer for bar chart
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -531,5 +534,50 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         },
       ),
     );
+  }
+}
+
+// CustomPainter for drawing the circular progress indicator
+class _CircularProgressPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _CircularProgressPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = 5.0;
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width / 2, size.height / 2) - strokeWidth / 2;
+
+    // Background circle (the grey ring)
+    final backgroundPaint = Paint()
+      ..color = Colors.grey.shade300 // Light grey for the background ring
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, backgroundPaint);
+
+    // Foreground arc (the colored progress)
+    final foregroundPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    double sweepAngle = 2 * pi * progress; // 2 * pi for a full circle
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2, // Start from the top (12 o'clock position)
+      sweepAngle,
+      false, // UseCenter is false for an arc, true for a pie slice
+      foregroundPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CircularProgressPainter oldDelegate) {
+    // Only repaint if the progress or color has changed
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
