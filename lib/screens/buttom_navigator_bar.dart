@@ -1,4 +1,5 @@
 import 'package:absensi_project/screens/attendance/attendance_list_screen.dart';
+import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/auth/profile_screen.dart';
 import 'package:absensi_project/screens/home_screen.dart';
 import 'package:absensi_project/screens/reports/person_report_screen.dart';
@@ -22,6 +23,9 @@ class MainBottomNavigationBar extends StatefulWidget {
   );
   // NEW: ValueNotifier for ProfileScreen
   static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(
+    false,
+  );
+  static final ValueNotifier<bool> refreshRequestsNotifier = ValueNotifier<bool>(
     false,
   );
 
@@ -48,6 +52,11 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
       color: Colors.green, // Warna untuk item Attendance
     ),
     CustomBottomBarItem(
+      icon: Icons.add,
+      label: 'Requests',
+      color: Colors.pink, // Warna untuk item Reports
+    ),
+    CustomBottomBarItem(
       icon: Icons.bar_chart_rounded,
       label: 'Reports',
       color: Colors.orange, // Warna untuk item Reports
@@ -71,6 +80,9 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
       // AttendanceListScreen: Now accepts refreshAttendanceNotifier to listen for updates.
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
+      ), // Access via widget name
+      RequestScreen(
+        refreshNotifier: MainBottomNavigationBar.refreshRequestsNotifier,
       ), // Access via widget name
       // Pass the new refreshReportsNotifier to PersonReportScreen
       PersonReportScreen(
@@ -140,7 +152,7 @@ class CustomBottomBarItem {
   final IconData icon;
   final String label;
   final Color color;
-   // Warna spesifik untuk item ini
+  // Warna spesifik untuk item ini
 
   CustomBottomBarItem({
     required this.icon,

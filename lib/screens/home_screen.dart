@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
-import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/buttom_navigator_bar.dart';
 
 import 'package:absensi_project/services/api_services.dart';
@@ -422,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      
+
       body: SafeArea(
         child: Stack(
           children: [
@@ -520,41 +519,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 _buildAttendanceSummary(),
               ],
-            ),
-            Positioned(
-              bottom: 10,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RequestScreen()),
-                    );
-                    if (result == true) {
-                      _fetchAttendanceData();
-                      MainBottomNavigationBar.refreshAttendanceNotifier.value =
-                          true;
-                    }
-                  },
-                  icon: const Icon(Icons.add, color: AppColors.primary),
-                  label: const Text(
-                    'Request Izin',
-                    style: TextStyle(color: AppColors.primary, fontSize: 18),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.background,
-                    foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    side: const BorderSide(color: AppColors.primary, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                ),
-              ),
             ),
           ],
         ),
@@ -903,7 +867,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ), // Assuming 'total_izin' maps to absents/leaves
               const SizedBox(width: 10),
               _buildSummaryCard(
-                'Late in',
+                'Total',
                 _absenceStats?.totalAbsen ?? 0,
                 Colors.orange,
               ), // Assuming 'total_absen' maps to late/other
@@ -912,6 +876,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+    //////addd
   }
 
   Widget _buildSummaryCard(String title, int count, Color color) {

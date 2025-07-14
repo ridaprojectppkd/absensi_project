@@ -10,7 +10,6 @@ import 'package:intl/intl.dart';
 
 class PersonReportScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
-
   const PersonReportScreen({super.key, required this.refreshNotifier});
 
   @override

@@ -9,7 +9,8 @@ import '../../widgets/custom_input_field.dart'; // Your CustomInputField
 import '../../widgets/primary_button.dart'; // Your PrimaryButton
 
 class RequestScreen extends StatefulWidget {
-  const RequestScreen({super.key});
+  final ValueNotifier<bool> refreshNotifier;
+  const RequestScreen({super.key, required this.refreshNotifier});
 
   @override
   State<RequestScreen> createState() => _RequestScreenState();

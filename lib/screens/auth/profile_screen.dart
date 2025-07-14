@@ -7,8 +7,7 @@ import 'package:intl/intl.dart'; // Keep this import for DateFormat if you use i
 import '../../routes/app_routes.dart'; // Your AppRoutes
 
 // NEW: Import ThemeProvider
-import 'package:absensi_project/screens/theme_provider.dart';
-import 'package:provider/provider.dart'; // Asumsikan Anda akan menambahkan provider ke pubspec.yaml
+// Asumsikan Anda akan menambahkan provider ke pubspec.yaml
 
 class ProfileScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -401,49 +400,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 10), // Space between cards
           // NEW: Dark Mode Toggle
-          Card(
-            color: Theme.of(context).cardColor,
-            margin: EdgeInsets.zero,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            elevation: 4,
-            child: Consumer<ThemeProvider>(
-              builder: (context, themeProvider, child) {
-                return ListTile(
-                  leading: Icon(
-                    themeProvider.themeMode == ThemeMode.dark
-                        ? Icons.dark_mode
-                        : Icons.light_mode,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    'Dark Mode',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onBackground,
-                    ),
-                  ),
-                  trailing: Switch.adaptive(
-                    value: themeProvider.themeMode == ThemeMode.dark,
-                    onChanged: (bool newValue) {
-                      themeProvider.toggleTheme(newValue);
-                    },
-                    activeColor: Theme.of(context)
-                        .colorScheme
-                        .primary, // MODIFIKASI: Gunakan warna primary dari tema
-                  ),
-                  onTap: () {
-                    // FIX: Gunakan null-aware operator (?) pada themeProvider.toggleTheme
-                    // Ini mencegah error jika themeProvider entah bagaimana null (meskipun seharusnya tidak dengan Consumer)
-                    themeProvider.toggleTheme(
-                      themeProvider.themeMode != ThemeMode.dark,
-                    ); // MODIFIKASI: Hapus null-aware operator karena Consumer menjamin tidak null
-                  },
-                );
-              },
-            ),
-          ),
+          // Card(
+          //   color: Theme.of(context).cardColor,
+          //   margin: EdgeInsets.zero,
+          //   shape: RoundedRectangleBorder(
+          //     borderRadius: BorderRadius.circular(15),
+          //   ),
+          //   elevation: 4,
+          //   child: Consumer<ThemeProvider>(
+          //     builder: (context, themeProvider, child) {
+          //       return ListTile(
+          //         leading: Icon(
+          //           themeProvider.themeMode == ThemeMode.dark
+          //               ? Icons.dark_mode
+          //               : Icons.light_mode,
+          //           color: Theme.of(context).colorScheme.primary,
+          //         ),
+          //         title: Text(
+          //           'Dark Mode',
+          //           style: TextStyle(
+          //             fontSize: 16,
+          //             color: Theme.of(context).colorScheme.onBackground,
+          //           ),
+          //         ),
+          //         trailing: Switch.adaptive(
+          //           value: themeProvider.themeMode == ThemeMode.dark,
+          //           onChanged: (bool newValue) {
+          //             themeProvider.toggleTheme(newValue);
+          //           },
+          //           activeColor: Theme.of(context)
+          //               .colorScheme
+          //               .primary, // MODIFIKASI: Gunakan warna primary dari tema
+          //         ),
+          //         onTap: () {
+          //           // FIX: Gunakan null-aware operator (?) pada themeProvider.toggleTheme
+          //           // Ini mencegah error jika themeProvider entah bagaimana null (meskipun seharusnya tidak dengan Consumer)
+          //           themeProvider.toggleTheme(
+          //             themeProvider.themeMode != ThemeMode.dark,
+          //           ); // MODIFIKASI: Hapus null-aware operator karena Consumer menjamin tidak null
+          //         },
+          //       );
+          //     },
+          //   ),
+          // ),
           const SizedBox(height: 10), // Space between cards
           // Settings Option (now navigates to EditProfileScreen)
           Card(

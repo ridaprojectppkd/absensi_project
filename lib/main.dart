@@ -1,23 +1,15 @@
 import 'package:absensi_project/routes/app_routes.dart';
-import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/auth/login_screen.dart';
 import 'package:absensi_project/screens/auth/register_screen.dart';
 import 'package:absensi_project/screens/buttom_navigator_bar.dart';
 import 'package:absensi_project/screens/forgot_password.dart.dart';
 import 'package:absensi_project/screens/reset_password_screen.dart';
 import 'package:absensi_project/screens/splashsceen.dart';
-import 'package:absensi_project/screens/theme_provider.dart';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +18,6 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
@@ -39,10 +30,11 @@ class MyApp extends StatelessWidget {
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
         AppRoutes.main: (context) => MainBottomNavigationBar(),
-        AppRoutes.request: (context) => RequestScreen(),
-      AppRoutes.ForgotPasswordEmail: (context) => const ForgotPasswordScreen(),
+        AppRoutes.ForgotPasswordEmail: (context) =>
+            const ForgotPasswordScreen(),
         AppRoutes.resetPasswordWithOtp: (context) {
-          final String email = ModalRoute.of(context)?.settings.arguments as String;
+          final String email =
+              ModalRoute.of(context)?.settings.arguments as String;
           return ResetPasswordWithOtpScreen(email: email);
         },
         // AppRoutes.attendanceList: (context) => AttendanceListScreen(),

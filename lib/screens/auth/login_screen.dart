@@ -6,6 +6,7 @@ import 'package:absensi_project/services/api_services.dart';
 import 'package:absensi_project/widgets/custom_input_field.dart';
 import 'package:absensi_project/widgets/primary_button.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -103,10 +104,15 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Center(
-                  child: Icon(Icons.lock, size: 100, color: AppColors.primary),
+                 Center(
+                  child: Lottie.asset(
+                    'assets/lottie/Welcome.json',
+                    width: 200,
+                    height: 200,
+                  ),
+                  //////////const untuk data yg tidak berubah
                 ),
                 const SizedBox(height: 20),
                 const Text("Welcome Back", style: AppTextStyles.heading),
@@ -150,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 // Forgot Password
                 Align(
-                  alignment: Alignment.centerRight,
+                  alignment: Alignment.center,
                   child: TextButton(
                     onPressed: () => Navigator.pushNamed(
                       context,
