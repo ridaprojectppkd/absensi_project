@@ -3,8 +3,6 @@ import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/auth/profile_screen.dart';
 import 'package:absensi_project/screens/home_screen.dart';
 import 'package:absensi_project/screens/reports/person_report_screen.dart';
-// import 'package:absensi_project/widgets/custom_navbar.dart'; // DIHAPUS: Ini akan diganti dengan implementasi kustom baru
-
 import 'package:flutter/material.dart';
 
 class MainBottomNavigationBar extends StatefulWidget {
@@ -25,9 +23,8 @@ class MainBottomNavigationBar extends StatefulWidget {
   static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(
     false,
   );
-  static final ValueNotifier<bool> refreshRequestsNotifier = ValueNotifier<bool>(
-    false,
-  );
+  static final ValueNotifier<bool> refreshRequestsNotifier =
+      ValueNotifier<bool>(false);
 
   @override
   State<MainBottomNavigationBar> createState() =>
@@ -54,17 +51,17 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     CustomBottomBarItem(
       icon: Icons.add,
       label: 'Requests',
-      color: Colors.pink, // Warna untuk item Reports
+      color: Colors.pink, // Warna untuk item Requests (index 2)
     ),
     CustomBottomBarItem(
       icon: Icons.bar_chart_rounded,
       label: 'Reports',
-      color: Colors.orange, // Warna untuk item Reports
+      color: Colors.orange, // Warna untuk item Reports (index 3)
     ),
     CustomBottomBarItem(
       icon: Icons.person_rounded,
       label: 'Profile',
-      color: Colors.purple, // Warna untuk item Profile
+      color: Colors.purple, // Warna untuk item Profile (index 4)
     ),
   ];
 
@@ -81,6 +78,7 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
       ), // Access via widget name
+      // RequestScreen is still in the IndexedStack, but its tab will now push a new route
       RequestScreen(
         refreshNotifier: MainBottomNavigationBar.refreshRequestsNotifier,
       ), // Access via widget name
@@ -98,37 +96,54 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   /// Handles the tap event on a BottomNavigationBarItem.
   ///
   /// Updates the [_selectedIndex] to switch the displayed screen in the IndexedStack.
-  void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
+  void _onItemTapped(int index) async {
+    // Made async to await Navigator.push
+    if (index == 2) {
+      // This is the 'Requests' tab
+      // Do not change _selectedIndex immediately for the IndexedStack.
+      // Instead, push the RequestScreen as a new full-screen route.
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => RequestScreen(
+            refreshNotifier: MainBottomNavigationBar.refreshRequestsNotifier,
+          ),
+        ),
+      );
 
-    // Special handling for when navigating TO the Home tab (index 0)
-    // This signal tells HomeScreen to refresh its data (e.g., if you came from Attendance tab).
-    if (index == 0) {
-      MainBottomNavigationBar.refreshHomeNotifier.value =
-          true; // Set value via widget name
+      // After RequestScreen is popped, check the result
+      if (result == true) {
+        // If request was submitted successfully, navigate back to Home tab (index 0)
+        // and trigger a refresh for Home and Attendance.
+        setState(() {
+          _selectedIndex = 0; // Set selected index to Home tab
+        });
+        MainBottomNavigationBar.refreshHomeNotifier.value = true;
+        MainBottomNavigationBar.refreshAttendanceNotifier.value =
+            true; // Also refresh attendance as it might be related
+      }
+      // If result is not true (e.g., user just went back without submitting),
+      // the current tab remains active (the one that was active before pushing RequestScreen).
+    } else {
+      // For all other tabs (Home, Attendance, Reports, Profile)
+      if (_selectedIndex != index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      }
+
+      // Trigger refresh notifiers for the respective tabs
+      if (index == 0) {
+        MainBottomNavigationBar.refreshHomeNotifier.value = true;
+      } else if (index == 1) {
+        MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
+      } else if (index == 3) {
+        // Reports tab (index 3 in _widgetOptions)
+        MainBottomNavigationBar.refreshReportsNotifier.value = true;
+      } else if (index == 4) {
+        // Profile tab (index 4 in _widgetOptions)
+        MainBottomNavigationBar.refreshProfileNotifier.value = true;
+      }
     }
-    // Special handling for when navigating TO the Attendance tab (index 1)
-    // This signal tells AttendanceListScreen to refresh its data.
-    else if (index == 1) {
-      MainBottomNavigationBar.refreshAttendanceNotifier.value =
-          true; // Set value via widget name
-    }
-    // Special handling for when navigating TO the Reports tab (index 2)
-    else if (index == 2) {
-      MainBottomNavigationBar.refreshReportsNotifier.value =
-          true; // Set value via widget name
-    }
-    // NEW: Special handling for when navigating TO the Profile tab (index 3)
-    else if (index == 3) {
-      MainBottomNavigationBar.refreshProfileNotifier.value =
-          true; // Set value via widget name
-    }
-    // You can add more `else if` blocks for other tabs if they also need a refresh
-    // when they are explicitly tapped from the bottom navigation bar.
   }
 
   @override
@@ -281,5 +296,3 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
     );
   }
 }
-
-// END: IMPLEMENTASI KUSTOM BOTTOM_BAR_LABEL_SLIDE

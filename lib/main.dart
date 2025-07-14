@@ -1,7 +1,7 @@
 import 'package:absensi_project/routes/app_routes.dart';
 import 'package:absensi_project/screens/auth/login_screen.dart';
 import 'package:absensi_project/screens/auth/register_screen.dart';
-import 'package:absensi_project/screens/buttom_navigator_bar.dart';
+import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/screens/forgot_password.dart.dart';
 import 'package:absensi_project/screens/reset_password_screen.dart';
 import 'package:absensi_project/screens/splashsceen.dart';

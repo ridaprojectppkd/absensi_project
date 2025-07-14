@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
-import 'package:absensi_project/screens/buttom_navigator_bar.dart';
-
+import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart'; // For reverse geocoding
@@ -88,10 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _updateDateTime() {
-    final now = DateTime.now();
+    if (!mounted) return; // Ensure widget is still mounted before setState
     setState(() {
-      _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(now);
-      _currentTime = DateFormat('HH:mm:ss').format(now);
+      _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
+      _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
     });
   }
 
@@ -102,9 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Location services are not enabled don't continue
-      // accessing the position and request users of the
-      // App to enable the location services.
       if (mounted) {
         _showErrorDialog('Location services are disabled. Please enable them.');
       }
@@ -119,11 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        // Permissions are denied, next time you could try
-        // requesting permissions again (this is also where
-        // Android's shouldShowRequestPermissionRationale
-        // returned true. According to Android guidelines
-        // your App should show an explanatory UI now.
         if (mounted) {
           _showErrorDialog(
             'Location permissions are denied. Please grant them in settings.',
@@ -138,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
       if (mounted) {
         _showErrorDialog(
           'Location permissions are permanently denied, we cannot request permissions.',
@@ -151,8 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -236,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
 
-    // Fetch attendance statistics////////////////////////////////////////////diganti get histori untuk mengikuti tanggal
+    // Fetch attendance statistics
     final ApiResponse<AbsenceStats> statsResponse = await _apiService
         .getAbsenceStats();
     if (statsResponse.statusCode == 200 && statsResponse.data != null) {
@@ -269,7 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // Format the current time to 'HH:mm' string for the API
       final String formattedCheckInTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -278,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
         checkInLat: _currentPosition!.latitude,
         checkInLng: _currentPosition!.longitude,
         checkInAddress: _location,
-        status: 'masuk', // Assuming 'masuk' for regular check-in
+        status: 'masuk',
         attendanceDate: formattedAttendanceDate,
         checkInTime: formattedCheckInTime,
       );
@@ -331,7 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // Format the current time to 'HH:mm' string for the API
       final String formattedCheckOutTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -396,12 +382,11 @@ class _HomeScreenState extends State<HomeScreen> {
       return '00:00:00'; // No check-in yet or jamMasuk is null
     }
 
-    final DateTime checkInDateTime =
-        _todayAbsence!.jamMasuk!; // Null-check added
+    final DateTime checkInDateTime = _todayAbsence!.jamMasuk!;
     DateTime endDateTime;
 
     if (_todayAbsence!.jamKeluar != null) {
-      endDateTime = _todayAbsence!.jamKeluar!; // Null-check added
+      endDateTime = _todayAbsence!.jamKeluar!;
     } else {
       endDateTime = DateTime.now(); // Use current time for live calculation
     }
@@ -414,117 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final bool hasCheckedIn = _todayAbsence?.jamMasuk != null;
-    final bool hasCheckedOut = _todayAbsence?.jamKeluar != null;
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 120,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(30),
-                  ),
-                ),
-              ),
-            ),
-            ListView(
-              padding: const EdgeInsets.only(top: 5),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Foto profil di samping kiri Welcome
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: _profilePhotoUrl.isNotEmpty
-                            ? ClipOval(
-                                child: Image.network(
-                                  _profilePhotoUrl.startsWith('http')
-                                      ? _profilePhotoUrl
-                                      : 'https://appabsensi.mobileprojp.com/public/' +
-                                            _profilePhotoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Icons.person, size: 40),
-                                ),
-                              )
-                            : const CircleAvatar(
-                                backgroundColor: Colors.white,
-                                child: Icon(Icons.person, size: 30),
-                              ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome, $_userName',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            // Lokasi dipindahkan di bawah Welcome
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  child: Text(
-                                    _location,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildMainActionCard(hasCheckedIn, hasCheckedOut),
-                const SizedBox(height: 20),
-                _buildAttendanceSummary(),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // --- Widget Builders ---
 
   Widget _buildMainActionCard(bool hasCheckedIn, bool hasCheckedOut) {
     return Card(
@@ -568,13 +443,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Handle Office button press - This might be for a specific location type
                       // For now, it's a placeholder.
                     },
-                    icon: const Icon(Icons.business, color: Colors.grey),
+                    icon: const Icon(
+                      Icons.business,
+                      color: AppColors.textLight,
+                    ),
                     label: const Text(
                       'Maps',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.textLight),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.grey),
+                      side: const BorderSide(color: AppColors.textLight),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -611,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 200, // Set a fixed height for the map
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.textLight, width: 1),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -632,9 +510,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: AppColors
+                      .inputFill, // Using inputFill for a light grey background
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.textLight, width: 1),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Center(
                   child: Column(
@@ -643,14 +522,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Icon(
                         Icons.map_outlined,
                         size: 50,
-                        color: Colors.grey,
+                        color: AppColors.textLight,
                       ),
                       const SizedBox(height: 10),
                       Text(
                         _location, // Display current location status
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: AppColors.textLight,
                           fontSize: 14,
                         ),
                       ),
@@ -700,7 +579,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             : _handleCheckIn),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasCheckedIn
-                        ? (hasCheckedOut ? Colors.grey : Colors.redAccent)
+                        ? (hasCheckedOut
+                              ? AppColors.textLight
+                              : AppColors
+                                    .error) // Grey if checked out, Red if checked in (for check-out)
                         : AppColors.primary,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 25,
@@ -735,7 +617,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             const SizedBox(height: 20),
-            const Divider(color: Colors.grey),
+            const Divider(
+              color: AppColors.border,
+            ), // Using AppColors.border for consistency
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -760,13 +644,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       ) ??
                       'N/A',
                   'Check Out',
-                  Colors.redAccent,
+                  AppColors.error, // Using AppColors.error for red accent
                 ),
                 _buildTimeDetail(
                   Icons.watch_later_outlined,
                   _calculateWorkingHours(),
                   'Working HR\'s',
-                  Colors.orange,
+                  AppColors.warning, // Using AppColors.warning for orange
                 ),
               ],
             ),
@@ -825,7 +709,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(
+                    color: AppColors.border,
+                  ), // Using AppColors.border
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
@@ -857,73 +743,212 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSummaryCard(
                 'Present',
                 _absenceStats?.totalMasuk ?? 0,
-                Colors.green,
+                AppColors.accentGreen,
+                Icons.check_circle_outline, // Added icon for Present
               ),
               const SizedBox(width: 10),
               _buildSummaryCard(
                 'Absents',
                 _absenceStats?.totalIzin ?? 0,
-                Colors.red,
-              ), // Assuming 'total_izin' maps to absents/leaves
+                AppColors.accentRed,
+                Icons.cancel_outlined, // Added icon for Absents
+              ),
               const SizedBox(width: 10),
               _buildSummaryCard(
                 'Total',
                 _absenceStats?.totalAbsen ?? 0,
-                Colors.orange,
-              ), // Assuming 'total_absen' maps to late/other
+                AppColors.accentOrange,
+                Icons.calendar_month, // Added icon for Total
+              ),
             ],
           ),
         ),
       ],
     );
-    //////addd
   }
 
-  Widget _buildSummaryCard(String title, int count, Color color) {
+  // Modified _buildSummaryCard to match _buildActionCard design
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    IconData icon,
+  ) {
     return Expanded(
       child: Card(
-        color: AppColors.background,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 2,
-        child: Column(
+        color: color, // Use the passed color for the card background
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ), // Larger radius
+        elevation: 6, // Higher elevation
+        child: Padding(
+          padding: const EdgeInsets.all(16.0), // Consistent padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Icon(
+                  icon,
+                  color: Colors.white.withOpacity(0.3),
+                  size: 40,
+                ), // Icon at top right
+              ),
+              const SizedBox(height: 10), // Spacing after icon
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white, // White text for colored background
+                  fontWeight: FontWeight.w500, // Slightly less bold than count
+                  fontSize: 16, // Consistent font size
+                ),
+              ),
+              const SizedBox(height: 5), // Spacing between title and count
+              Align(
+                alignment: Alignment.bottomRight, // Align count to bottom right
+                child: Text(
+                  count.toString().padLeft(2, '0'),
+                  style: TextStyle(
+                    color: Colors.white, // White text
+                    fontWeight: FontWeight.bold,
+                    fontSize: 28, // Similar size to action card count
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasCheckedIn = _todayAbsence?.jamMasuk != null;
+    final bool hasCheckedOut = _todayAbsence?.jamKeluar != null;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Stack(
           children: [
-            Container(
-              height: 5.0,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
+            // Background primary color top section
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 120, // Adjust height as needed
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(30),
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Text(
-                      count.toString().padLeft(2, '0'),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 32,
+            ListView(
+              padding: const EdgeInsets.only(
+                top: 5,
+              ), // Adjust top padding to show background
+              children: [
+                // User Profile and Welcome Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: _profilePhotoUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  _profilePhotoUrl.startsWith('http')
+                                      ? _profilePhotoUrl
+                                      : 'https://appabsensi.mobileprojp.com/public/' +
+                                            _profilePhotoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color: AppColors.textLight,
+                                      ),
+                                ),
+                              )
+                            : const CircleAvatar(
+                                backgroundColor: Colors.white,
+                                child: Icon(
+                                  Icons.person,
+                                  size: 30,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                       ),
-                    ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome, $_userName',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    _location,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+                // 3. Original Main Action Card (Map, Time/Date, Check-in/out)
+                _buildMainActionCard(hasCheckedIn, hasCheckedOut),
+                const SizedBox(height: 20),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: AppColors.border,
+                ),
+                const SizedBox(height: 20),
+
+                // 4. Attendance Summary
+                _buildAttendanceSummary(),
+
+                const SizedBox(height: 20), // Bottom padding
+              ],
             ),
           ],
         ),

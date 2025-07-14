@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
-import 'package:absensi_project/screens/buttom_navigator_bar.dart';
+import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
