@@ -27,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _location = 'Getting Location...';
   String _currentDate = '';
   String _currentTime = '';
+  String _profilePhotoUrl = '';
   Timer? _timer;
 
   AbsenceToday? _todayAbsence; // Changed from AttendanceModel to AbsenceToday
@@ -77,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (response.statusCode == 200 && response.data != null) {
       setState(() {
         _userName = response.data!.name;
+        _profilePhotoUrl = response.data!.profile_photo ?? '';
       });
     } else {
       print('Failed to load user profile: ${response.message}');
@@ -420,134 +422,142 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: AppColors.primary,
-        elevation: 0,
-        toolbarHeight: 80,
-        flexibleSpace: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
+      
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 120,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(30),
+                  ),
+                ),
+              ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            ListView(
+              padding: const EdgeInsets.only(top: 5),
               children: [
-                const Icon(Icons.location_on, color: Colors.white, size: 24),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Location',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      Text(
-                        _location,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                      // Foto profil di samping kiri Welcome
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
-                        maxLines:
-                            2, // Mengizinkan teks untuk membungkus hingga 2 baris
-                        overflow: TextOverflow
-                            .ellipsis, // Menambahkan elipsis jika masih meluap
+                        child: _profilePhotoUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  _profilePhotoUrl.startsWith('http')
+                                      ? _profilePhotoUrl
+                                      : 'https://appabsensi.mobileprojp.com/public/' +
+                                            _profilePhotoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.person, size: 40),
+                                ),
+                              )
+                            : const CircleAvatar(
+                                backgroundColor: Colors.white,
+                                child: Icon(Icons.person, size: 30),
+                              ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Welcome, $_userName',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            // Lokasi dipindahkan di bawah Welcome
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    _location,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                  onPressed: () {
-                    // Handle notification button press
-                  },
-                ),
+                const SizedBox(height: 20),
+                _buildMainActionCard(hasCheckedIn, hasCheckedOut),
+                const SizedBox(height: 20),
+                _buildAttendanceSummary(),
               ],
             ),
-          ),
+            Positioned(
+              bottom: 10,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RequestScreen()),
+                    );
+                    if (result == true) {
+                      _fetchAttendanceData();
+                      MainBottomNavigationBar.refreshAttendanceNotifier.value =
+                          true;
+                    }
+                  },
+                  icon: const Icon(Icons.add, color: AppColors.primary),
+                  label: const Text(
+                    'Request Izin',
+                    style: TextStyle(color: AppColors.primary, fontSize: 18),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.background,
+                    foregroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    side: const BorderSide(color: AppColors.primary, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      body: Stack(
-        children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: 120,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(30),
-                ),
-              ),
-            ),
-          ),
-          ListView(
-            padding: const EdgeInsets.only(top: 5),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text(
-                  'Welcome, $_userName',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildMainActionCard(hasCheckedIn, hasCheckedOut),
-              const SizedBox(height: 20),
-              _buildAttendanceSummary(),
-            ],
-          ),
-          /////////////////////////tombol request///////////////
-          Positioned(
-            bottom: 10,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RequestScreen()),
-                  );
-                  if (result == true) {
-                    _fetchAttendanceData(); // Refresh home after request
-                    MainBottomNavigationBar.refreshAttendanceNotifier.value =
-                        true; // Signal AttendanceListScreen
-                  }
-                },
-                icon: const Icon(Icons.add, color: AppColors.primary),
-                label: const Text(
-                  'Request Izin',
-                  style: TextStyle(color: AppColors.primary, fontSize: 18),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.background,
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  side: const BorderSide(color: AppColors.primary, width: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -596,7 +606,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     icon: const Icon(Icons.business, color: Colors.grey),
                     label: const Text(
-                      'Office',
+                      'Maps',
                       style: TextStyle(color: Colors.grey),
                     ),
                     style: OutlinedButton.styleFrom(

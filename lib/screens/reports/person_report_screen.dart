@@ -21,7 +21,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   final ApiService _apiService = ApiService();
 
   late Future<void>
-      _reportDataFuture; // Changed to void as we update state directly
+  _reportDataFuture; // Changed to void as we update state directly
   DateTime _selectedMonth = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -95,15 +95,19 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           if (absence.status?.toLowerCase() == 'masuk') {
             currentMonthPresentCount++;
             if (absence.checkIn != null && absence.checkOut != null) {
-              totalWorkingDuration += absence.checkOut!.difference(absence.checkIn!);
+              totalWorkingDuration += absence.checkOut!.difference(
+                absence.checkIn!,
+              );
               // ASUMPSI UNTUK TERLAMBAT: Ini mengasumsikan 'terlambat' ditentukan oleh waktu check-in setelah jam 8:00 AM.
               // Jika model `Absence` Anda memiliki flag `isLate` eksplisit atau status 'terlambat' yang berbeda, gunakan itu sebagai gantinya.
               // Untuk demonstrasi, kita akan memeriksa jika checkIn setelah 08:00 AM.
-              if (absence.checkIn!.hour > 8 || (absence.checkIn!.hour == 8 && absence.checkIn!.minute > 0)) {
+              if (absence.checkIn!.hour > 8 ||
+                  (absence.checkIn!.hour == 8 && absence.checkIn!.minute > 0)) {
                 currentMonthLateCount++;
               }
             }
-          } else if (absence.status?.toLowerCase() == 'izin' || absence.status?.toLowerCase() == 'sakit') {
+          } else if (absence.status?.toLowerCase() == 'izin' ||
+              absence.status?.toLowerCase() == 'sakit') {
             // Assuming 'izin' and 'sakit' are considered absent types
             currentMonthAbsentCount++;
           }
@@ -134,7 +138,10 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         _absentCount = currentMonthAbsentCount;
         _lateInCount = currentMonthLateCount;
         _totalWorkingHours = formattedTotalWorkingHours;
-        _totalWorkingDaysInMonth = _getDaysInMonth(_selectedMonth.year, _selectedMonth.month);
+        _totalWorkingDaysInMonth = _getDaysInMonth(
+          _selectedMonth.year,
+          _selectedMonth.month,
+        );
       });
 
       // Update bar chart data after all counts are finalized
@@ -285,7 +292,12 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   }
 
   // Helper widget to build summary cards with circular progress indicator
-  Widget _buildSummaryCard(String title, int count, Color color, int totalDays) {
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    int totalDays,
+  ) {
     // Calculate percentage, ensuring totalDays is not zero to avoid division by zero
     double percentage = totalDays > 0 ? (count / totalDays) : 0.0;
     if (percentage > 1.0) percentage = 1.0; // Cap percentage at 100%
@@ -368,7 +380,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(25.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -462,7 +474,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
               const SizedBox(height: 150), // Spacer for bar chart
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: BarChart(
                     BarChartData(
                       barGroups: _barChartGroups,
@@ -552,7 +564,9 @@ class _CircularProgressPainter extends CustomPainter {
 
     // Background circle (the grey ring)
     final backgroundPaint = Paint()
-      ..color = Colors.grey.shade300 // Light grey for the background ring
+      ..color = Colors
+          .grey
+          .shade300 // Light grey for the background ring
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;

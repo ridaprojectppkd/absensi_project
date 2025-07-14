@@ -139,7 +139,8 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
 class CustomBottomBarItem {
   final IconData icon;
   final String label;
-  final Color color; // Warna spesifik untuk item ini
+  final Color color;
+   // Warna spesifik untuk item ini
 
   CustomBottomBarItem({
     required this.icon,

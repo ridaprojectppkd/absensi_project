@@ -1,5 +1,3 @@
-// lib/screens/profile/profile_screen.dart
-import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/screens/auth/edit_profile_screen.dart';
 import 'package:absensi_project/services/api_services.dart';
@@ -7,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Keep this import for DateFormat if you use it for displaying dates in UI
 
 import '../../routes/app_routes.dart'; // Your AppRoutes
+
+// NEW: Import ThemeProvider
+import 'package:absensi_project/screens/theme_provider.dart';
+import 'package:provider/provider.dart'; // Asumsikan Anda akan menambahkan provider ke pubspec.yaml
 
 class ProfileScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -63,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // _notificationEnabled = user?.notificationPreference ?? true;
       });
     } else {
-      print('Failed to load user profile: ${response.message}');
+      ('Failed to load user profile: ${response.message}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -141,11 +143,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: Center(child: const Text('Profile')),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        title: const Center(child: Text('Profile')),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 0,
         automaticallyImplyLeading: false, // Managed by MainBottomNavigationBar
       ),
@@ -158,9 +160,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             right: 0,
             child: Container(
               height: 150, // Height of the blue background
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.vertical(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(30),
                 ),
               ),
@@ -223,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white, // White border around avatar
+              color: Theme.of(context).colorScheme.onPrimary,
               width: 4,
             ),
             boxShadow: [
@@ -237,7 +239,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: CircleAvatar(
             radius: 55, // Larger radius for a prominent profile picture
-            backgroundColor: AppColors.primary, // Placeholder background
+            backgroundColor: Theme.of(context)
+                .colorScheme
+                .primary, // MODIFIKASI: Gunakan warna primary dari tema
             backgroundImage: imageProvider, // Use the determined image provider
             child:
                 imageProvider ==
@@ -254,10 +258,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // User Name
         Text(
           username,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: AppColors.textDark, // Dark text color
+            color: Theme.of(context).colorScheme.onBackground,
           ),
         ),
         const SizedBox(height: 4),
@@ -267,18 +271,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text(
               designation,
-              style: const TextStyle(fontSize: 16, color: AppColors.textLight),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
                 '-', // Separator
-                style: TextStyle(fontSize: 16, color: AppColors.textLight),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
             Text(
               'Joined $joinedDate', // Add "Joined " prefix here
-              style: const TextStyle(fontSize: 16, color: AppColors.textLight),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ],
         ),
@@ -292,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String jenisKelamin, // Added jenisKelamin parameter
   ) {
     return Card(
-      color: AppColors.background,
+      color: Theme.of(context).cardColor,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
@@ -303,10 +316,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildDetailRow('Email ID', email),
             if (batchKe != null) ...[
               // Conditionally add batch info
-              const Divider(color: AppColors.border, height: 20),
+              Divider(color: Theme.of(context).dividerColor, height: 20),
               _buildDetailRow('Batch', batchKe),
             ],
-            const Divider(color: AppColors.border, height: 20), // New Divider
+            Divider(color: Theme.of(context).dividerColor, height: 20),
             _buildDetailRow(
               'Jenis Kelamin',
               jenisKelamin,
@@ -323,17 +336,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: AppColors.textLight,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: AppColors.textDark,
+            color: Theme.of(context).colorScheme.onBackground,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -348,20 +361,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           // Notification Toggle
           Card(
-            color: AppColors.background,
+            color: Theme.of(context).cardColor,
             margin: EdgeInsets.zero, // No extra margin for this card
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             elevation: 4,
             child: ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.notifications,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              title: const Text(
+              title: Text(
                 'Notification',
-                style: TextStyle(fontSize: 16, color: AppColors.textDark),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onBackground,
+                ),
               ),
               trailing: Switch.adaptive(
                 value: _notificationEnabled,
@@ -371,7 +387,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   });
                   // Add logic to save notification preference (e.g., to UserModel or SessionManager)
                 },
-                activeColor: AppColors.primary,
+                activeColor: Theme.of(context)
+                    .colorScheme
+                    .primary, // MODIFIKASI: Gunakan warna primary dari tema
               ),
               onTap: () {
                 // Toggling the switch directly is often enough, but you can add more logic here.
@@ -382,24 +400,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 10), // Space between cards
+          // NEW: Dark Mode Toggle
+          Card(
+            color: Theme.of(context).cardColor,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            elevation: 4,
+            child: Consumer<ThemeProvider>(
+              builder: (context, themeProvider, child) {
+                return ListTile(
+                  leading: Icon(
+                    themeProvider.themeMode == ThemeMode.dark
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(
+                    'Dark Mode',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    ),
+                  ),
+                  trailing: Switch.adaptive(
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (bool newValue) {
+                      themeProvider.toggleTheme(newValue);
+                    },
+                    activeColor: Theme.of(context)
+                        .colorScheme
+                        .primary, // MODIFIKASI: Gunakan warna primary dari tema
+                  ),
+                  onTap: () {
+                    // FIX: Gunakan null-aware operator (?) pada themeProvider.toggleTheme
+                    // Ini mencegah error jika themeProvider entah bagaimana null (meskipun seharusnya tidak dengan Consumer)
+                    themeProvider.toggleTheme(
+                      themeProvider.themeMode != ThemeMode.dark,
+                    ); // MODIFIKASI: Hapus null-aware operator karena Consumer menjamin tidak null
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10), // Space between cards
           // Settings Option (now navigates to EditProfileScreen)
           Card(
-            color: AppColors.background,
+            color: Theme.of(context).cardColor,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             elevation: 4,
             child: ListTile(
-              leading: const Icon(Icons.settings, color: AppColors.primary),
-              title: const Text(
-                'Settings',
-                style: TextStyle(fontSize: 16, color: AppColors.textDark),
+              leading: Icon(
+                Icons.settings,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              trailing: const Icon(
+              title: Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onBackground,
+                ),
+              ),
+              trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 18,
-                color: AppColors.textLight,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               onTap: _navigateToEditProfile, // Call the new navigation method
             ),
@@ -407,22 +476,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 10), // Space between cards
           // Logout Option
           Card(
-            color: AppColors.background,
+            color: Theme.of(context).cardColor,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             elevation: 4,
             child: ListTile(
-              leading: const Icon(Icons.logout, color: AppColors.error),
-              title: const Text(
+              leading: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.error,
+              ), // MODIFIKASI: Gunakan warna error dari tema
+              title: Text(
                 'Logout',
-                style: TextStyle(color: AppColors.error, fontSize: 16),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 16,
+                ), // MODIFIKASI: Gunakan warna error dari tema
               ),
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 18,
-                color: AppColors.textLight,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               onTap: () => _logout(context),
             ),
@@ -430,7 +505,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 20), // Space at the bottom
           Card(
-            color: AppColors.background,
+            color: Theme.of(context).cardColor,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
