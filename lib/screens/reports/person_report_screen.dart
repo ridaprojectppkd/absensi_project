@@ -1,3 +1,5 @@
+// lib/screens/person_report_screen.dart
+
 import 'dart:async';
 import 'dart:math';
 import 'package:absensi_project/constants/app_colors.dart';
@@ -18,12 +20,17 @@ class PersonReportScreen extends StatefulWidget {
 class _PersonReportScreenState extends State<PersonReportScreen> {
   final ApiService _apiService = ApiService();
   late Future<void> _reportDataFuture;
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
 
   // Summary counts
   int _presentCount = 0;
   int _absentCount = 0;
-  int _lateInCount = 0;
+  int _calculatedTotalCount =
+      0; // Renamed from _lateInCount to reflect it's (present + absent)
   int _totalWorkingDaysInMonth = 0;
   String _totalWorkingHours = '0hr';
 
@@ -54,7 +61,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
 
   Future<void> _fetchAndCalculateMonthlyReports() async {
     try {
-      // Get first and last day of selected month
       final firstDayOfMonth = DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -66,7 +72,6 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         0,
       );
 
-      // Fetch stats for the selected month
       final ApiResponse<AbsenceStats> statsResponse = await _apiService
           .getAbsenceStats(
             startDate: DateFormat('yyyy-MM-dd').format(firstDayOfMonth),
@@ -78,7 +83,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         setState(() {
           _presentCount = stats.totalMasuk;
           _absentCount = stats.totalIzin;
-          _lateInCount = stats.totalAbsen;
+          // Calculate the total based on present and absent, as per your clarification
+          _calculatedTotalCount = stats.totalMasuk + stats.totalIzin;
           _totalWorkingDaysInMonth = _getDaysInMonth(
             _selectedDate.year,
             _selectedDate.month,
@@ -86,12 +92,17 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         });
       } else {
         print('Failed to get absence stats: ${statsResponse.message}');
-        _updateSummaryCounts(0, 0, 0, 0, '0hr');
+        _updateSummaryCounts(
+          0,
+          0,
+          0,
+          0,
+          '0hr',
+        ); // Pass 0 for calculated total too
         _updateBarChartData(0, 0, 0);
         return;
       }
 
-      // Calculate working hours for the selected month
       final ApiResponse<List<Absence>> historyResponse = await _apiService
           .getAbsenceHistory(
             startDate: DateFormat('yyyy-MM-dd').format(firstDayOfMonth),
@@ -120,7 +131,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         _totalWorkingHours = formattedTotalWorkingHours;
       });
 
-      _updateBarChartData(_presentCount, _absentCount, _lateInCount);
+      // Pass the calculated total to the bar chart update function
+      _updateBarChartData(_presentCount, _absentCount, _calculatedTotalCount);
     } catch (e) {
       print('Error fetching reports: $e');
       _updateSummaryCounts(0, 0, 0, 0, '0hr');
@@ -135,20 +147,24 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
   void _updateSummaryCounts(
     int present,
     int absent,
-    int late,
+    int totalCalculated, // Parameter for the calculated total
     int totalWorkingDays,
     String totalHrs,
   ) {
     setState(() {
       _presentCount = present;
       _absentCount = absent;
-      _lateInCount = late;
+      _calculatedTotalCount = totalCalculated; // Update the new state variable
       _totalWorkingDaysInMonth = totalWorkingDays;
       _totalWorkingHours = totalHrs;
     });
   }
 
-  void _updateBarChartData(int presentCount, int absentCount, int lateInCount) {
+  void _updateBarChartData(
+    int presentCount,
+    int absentCount,
+    int calculatedTotalCount,
+  ) {
     setState(() {
       _barChartGroups = [
         BarChartGroupData(
@@ -156,7 +172,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           barRods: [
             BarChartRodData(
               toY: presentCount.toDouble(),
-              color: Color(0xff81E7AF),
+              color: const Color(0xff81E7AF),
               width: 60,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -168,7 +184,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           barRods: [
             BarChartRodData(
               toY: absentCount.toDouble(),
-              color: Color(0xffF75A5A),
+              color: const Color(0xffF75A5A),
               width: 60,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -179,8 +195,9 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           x: 2,
           barRods: [
             BarChartRodData(
-              toY: lateInCount.toDouble(),
-              color: Color(0xffFFA955),
+              toY: calculatedTotalCount
+                  .toDouble(), // Use the calculated total here
+              color: const Color(0xffFFA955),
               width: 60,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -206,7 +223,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
         text = 'Absent';
         break;
       case 2:
-        text = 'Total';
+        text = 'Total'; // Reverted to 'Total' as per your new logic
         break;
       default:
         text = '';
@@ -242,11 +259,15 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
       },
     );
 
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _reportDataFuture = _fetchAndCalculateMonthlyReports();
-      });
+    if (picked != null) {
+      final newSelectedMonth = DateTime(picked.year, picked.month, 1);
+      if (newSelectedMonth.year != _selectedDate.year ||
+          newSelectedMonth.month != _selectedDate.month) {
+        setState(() {
+          _selectedDate = newSelectedMonth;
+          _reportDataFuture = _fetchAndCalculateMonthlyReports();
+        });
+      }
     }
   }
 
@@ -256,6 +277,11 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
     Color color,
     int totalDays,
   ) {
+    // For 'Present', the percentage should be count / totalWorkingDaysInMonth
+    // For 'Absent', it's count / totalWorkingDaysInMonth
+    // For 'Total', it's (Present + Absent) / totalWorkingDaysInMonth, but the visual might
+    // look odd if totalDays is low and the combined count is high.
+    // Let's cap percentage at 1.0 to avoid the circle filling more than once.
     double percentage = totalDays > 0 ? (count / totalDays) : 0.0;
     if (percentage > 1.0) percentage = 1.0;
 
@@ -287,7 +313,7 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                 child: Center(
                   child: Text(
                     count.toString(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textDark,
                       fontWeight: FontWeight.bold,
                       fontSize: 24,
@@ -326,7 +352,11 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                'Failed to load report: ${snapshot.error}. Please try again.',
+              ),
+            );
           }
 
           return Column(
@@ -403,8 +433,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                       _totalWorkingDaysInMonth,
                     ),
                     _buildSummaryCard(
-                      'Total',
-                      _lateInCount,
+                      'Total', // Now this truly represents total present + absent
+                      _calculatedTotalCount,
                       Colors.orange,
                       _totalWorkingDaysInMonth,
                     ),
@@ -423,8 +453,9 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 150),
-              Expanded(
+              SizedBox(height: 100),
+              SizedBox(
+                height: 350,
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: BarChart(
@@ -463,7 +494,8 @@ class _PersonReportScreenState extends State<PersonReportScreen> {
                                 label = 'Absent';
                                 break;
                               case 2:
-                                label = 'Total';
+                                label =
+                                    'Total'; // Tooltip label for the combined total
                                 break;
                               default:
                                 label = '';

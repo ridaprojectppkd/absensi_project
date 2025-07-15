@@ -360,7 +360,8 @@ class ApiService {
   Future<ApiResponse<AbsenceStats>> getAbsenceStats({
     String? startDate,
     String? endDate,
-    int? year,
+    int?
+    year, // You currently don't use 'year' for stats, but keeping it for flexibility
   }) async {
     final Map<String, String> queryParams = {};
     if (startDate != null) {
@@ -370,11 +371,16 @@ class ApiService {
       queryParams['end'] = endDate;
     }
     if (year != null) {
+      // This parameter isn't used by your current URL structure, but it's here if needed later
       queryParams['year'] = year.toString();
     }
+
+    // CORRECTED LINE: Construct the URL with query parameters
     final url = Uri.parse(
-      '$_baseUrl/absen/stats?start=2025-07-01&end=2025-07-31', // Example date range
-    );
+      '$_baseUrl/absen/stats',
+    ).replace(queryParameters: queryParams);
+    print('Fetching stats from URL: $url'); // Add a print for debugging
+
     try {
       final response = await http.get(
         url,
@@ -390,6 +396,10 @@ class ApiService {
           statusCode: response.statusCode,
         );
       } else {
+        // Log the actual error message from the API for better debugging
+        print(
+          'API Error (getAbsenceStats): Status Code ${response.statusCode}, Message: ${responseBody['message']}',
+        );
         return ApiResponse.fromError(
           responseBody['message'] ?? 'Failed to get absence statistics',
           statusCode: response.statusCode,
@@ -397,10 +407,12 @@ class ApiService {
         );
       }
     } catch (e) {
+      print('Network Error (getAbsenceStats): $e'); // Log network errors
       return ApiResponse.fromError('An error occurred: $e');
     }
   }
 
+  // ... (rest of your ApiService code)
   Future<ApiResponse<Absence>> deleteAbsence(int id) async {
     final url = Uri.parse('$_baseUrl/absen/$id');
     try {
