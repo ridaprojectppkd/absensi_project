@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.primary,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -77,19 +77,21 @@ class _SplashScreenState extends State<SplashScreen>
             children: const [
               Image(
                 image: AssetImage('assets/images/logo.png'),
-                width: 90,
-                height: 90,
+                width: 300,
+                height: 300,
               ),
-              SizedBox(height: 20),
-              Text('AbsenSee', style: AppTextStyles.heading),
-              SizedBox(height: 10),
-              Text(
-                'Selamat Datang!',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.normal,
+              // SizedBox(height: 20),
+              // Text('AbsenSee', style: AppTextStyles.heading),
+              // SizedBox(height: 10),
+              // Text(
+              //   'Selamat Datang!',
+              //   textAlign: TextAlign.center,
+              //   style: AppTextStyles.normal,
+              // ),
+              SizedBox(height: 5),
+              Center(
+                child: CircularProgressIndicator(color: AppColors.background),
               ),
-              SizedBox(height: 30),
-              CircularProgressIndicator(color: AppColors.primary),
             ],
           ),
         ),

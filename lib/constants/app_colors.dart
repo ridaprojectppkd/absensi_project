@@ -7,7 +7,9 @@ class AppColors {
   // Backgrounds
   static const Color background = Color(0xFFF9FAFB); // Very light gray
   static const Color card = Color(0xFFFFFFFF); // White cards/containers
-  static const Color inputFill = Color(0xFFF3F4F6); // Slightly darker than background
+  static const Color inputFill = Color(
+    0xFFF3F4F6,
+  ); // Slightly darker than background
 
   // Text
   static const Color textDark = Color(0xFF1F2937); // Almost black
@@ -23,20 +25,30 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B); // Amber
 
   // Added colors for attendance list design, mapping to your existing states
-  static const Color accentGreen = AppColors.success; // Using existing success color
+  static const Color accentGreen =
+      AppColors.success; // Using existing success color
   static const Color accentRed = AppColors.error; // Using existing error color
-  static const Color accentOrange = AppColors.warning; // Using existing warning color
+  static const Color accentOrange =
+      AppColors.warning; // Using existing warning color
 
   // Specific light background colors for the cards
   static const Color lightGreenBackground = Color(0xFFE8F5E9); // Lighter green
   static const Color lightRedBackground = Color(0xFFFFEBEE); // Lighter red
-  static const Color lightOrangeBackground = Color(0xFFFFF3E0); // Lighter orange
+  static const Color lightOrangeBackground = Color(
+    0xFFFFF3E0,
+  ); // Lighter orange
 
   // NEW COLORS FROM THE IMAGE
   // Top Action Card Colors
-  static const Color blueCard = Color(0xFF5B3AEE); // Matches the blue "Buildings" card
-  static const Color tealCard = Color(0xFF00C8C8); // Matches the teal "Repair" card
-  static const Color orangeCard = Color(0xFFFC8F2B); // Matches the orange "Maintain" card
+  static const Color blueCard = Color(
+    0xFF5B3AEE,
+  ); // Matches the blue "Buildings" card
+  static const Color tealCard = Color(
+    0xFF00C8C8,
+  ); // Matches the teal "Repair" card
+  static const Color orangeCard = Color(
+    0xFFFC8F2B,
+  ); // Matches the orange "Maintain" card
 
   // Operating Status Colors
   static const Color normalStatus = Color(0xFF1ABC9C); // Green for "Normal"
