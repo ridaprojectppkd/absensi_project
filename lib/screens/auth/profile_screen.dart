@@ -143,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: AppColors.background,
       // appBar: AppBar(
       //   title: const Center(child: Text('Profile')),
       //   backgroundColor: AppColors.primary,
@@ -355,40 +355,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          // Notification Toggle
-          Card(
-            color: AppColors.primary,
-            margin: EdgeInsets.zero, // No extra margin for this card
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            elevation: 4,
-            child: ListTile(
-              leading: Icon(Icons.notifications, color: AppColors.background),
-              title: Text(
-                'Notification',
-                style: TextStyle(fontSize: 16, color: AppColors.background),
-              ),
-              trailing: Switch.adaptive(
-                value: _notificationEnabled,
-                onChanged: (bool newValue) {
-                  setState(() {
-                    _notificationEnabled = newValue;
-                  });
-                  // Add logic to save notification preference (e.g., to UserModel or SessionManager)
-                },
-                activeColor: Theme.of(context)
-                    .colorScheme
-                    .primary, // MODIFIKASI: Gunakan warna primary dari tema
-              ),
-              onTap: () {
-                // Toggling the switch directly is often enough, but you can add more logic here.
-                setState(() {
-                  _notificationEnabled = !_notificationEnabled;
-                });
-              },
-            ),
-          ),
           const SizedBox(height: 10), // Space between cards
           // NEW: Dark Mode Toggle
           // Card(
