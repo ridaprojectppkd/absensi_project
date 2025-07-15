@@ -9,8 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart'; // For reverse geocoding
 import 'package:geolocator/geolocator.dart'; // For geolocation
 import 'package:intl/intl.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'
-    as gmaps; // Import for Google Maps
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:lottie/lottie.dart'; // Import for Lottie animations
 
 class HomeScreen extends StatefulWidget {
@@ -47,16 +46,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _updateDateTime();
-    _determinePosition(); // Start location fetching
-    _loadUserData();
-    _fetchAttendanceData(); // Fetch initial attendance data
-
+    _initData(); // Combined initial data loading into a single method
     widget.refreshNotifier.addListener(_handleRefreshSignal);
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _updateDateTime(),
-    );
+    // This timer will now also trigger a setState to update the working hours
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return; // Ensure widget is still mounted
+      setState(() {
+        _updateDateTime(); // Update current date/time
+        // The working hours are implicitly updated because _calculateWorkingHours
+        // depends on _todayAbsence (which might be updated by API)
+        // and DateTime.now() which changes every second.
+      });
+    });
   }
 
   @override
@@ -67,12 +69,31 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  // New method to initialize all data fetching
+  Future<void> _initData() async {
+    await _determinePosition(); // Fetch location first
+    await _loadUserData();
+    await _fetchAttendanceData(); // Then fetch attendance data
+  }
+
   void _handleRefreshSignal() {
     if (widget.refreshNotifier.value) {
-      _fetchAttendanceData(); // Re-fetch data for the home screen
+      _initData(); // Re-fetch all data for the home screen on refresh signal
       widget.refreshNotifier.value = false; // Reset the notifier after handling
     }
   }
+
+  // --- Pull to Refresh Logic ---
+  Future<void> _onPullToRefresh() async {
+    await _initData(); // Call the combined initialization logic
+    if (mounted) {
+      // Ensure widget is still mounted before showing SnackBar
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data refreshed!')));
+    }
+  }
+  // --- End Pull to Refresh Logic ---
 
   Future<void> _loadUserData() async {
     final ApiResponse<User> response = await _apiService.getProfile();
@@ -85,16 +106,16 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Failed to load user profile: ${response.message}');
       setState(() {
         _userName = 'User'; // Default if profile fails
+        _profilePhotoUrl = ''; // Clear photo if error
       });
     }
   }
 
   void _updateDateTime() {
-    if (!mounted) return; // Ensure widget is still mounted before setState
-    setState(() {
-      _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
-      _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
-    });
+    _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
+    _currentTime = DateFormat(
+      'HH:mm:ss',
+    ).format(DateTime.now()); // KEEP seconds for live clock
   }
 
   Future<void> _determinePosition() async {
@@ -110,6 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _location = 'Location services disabled';
         _permissionGranted = false;
+        _currentPosition = null; // Ensure position is null if services disabled
+        _initialCameraPosition = null; // Clear map if services disabled
       });
       return;
     }
@@ -126,6 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _location = 'Location permissions denied';
           _permissionGranted = false;
+          _currentPosition =
+              null; // Ensure position is null if permission denied
+          _initialCameraPosition = null; // Clear map if permission denied
         });
         return;
       }
@@ -140,6 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _location = 'Location permissions permanently denied';
         _permissionGranted = false;
+        _currentPosition =
+            null; // Ensure position is null if permission denied forever
+        _initialCameraPosition = null; // Clear map if permission denied forever
       });
       return;
     }
@@ -147,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10), // Add a timeout for location
       );
       setState(() {
         _currentPosition = position;
@@ -155,13 +185,33 @@ class _HomeScreenState extends State<HomeScreen> {
           position.latitude,
           position.longitude,
         );
+        // Clear existing markers before adding new one
+        _markers.clear();
         _addMarker(
           gmaps.LatLng(position.latitude, position.longitude),
           'current_location',
           'Your Current Location',
         );
       });
+      // If map controller is already initialized, animate camera to new position
+      if (_mapController != null && _initialCameraPosition != null) {
+        _mapController?.animateCamera(
+          gmaps.CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
+        );
+      }
       await _getAddressFromLatLng(position);
+    } on TimeoutException {
+      if (mounted) {
+        _showErrorDialog(
+          'Failed to get current location: Location request timed out.',
+        );
+      }
+      setState(() {
+        _location = 'Location timeout, try again';
+        _permissionGranted = false;
+        _currentPosition = null;
+        _initialCameraPosition = null;
+      });
     } catch (e) {
       print('Error getting current location: $e');
       if (mounted) {
@@ -170,6 +220,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _location = 'Failed to get location';
         _permissionGranted = false;
+        _currentPosition = null;
+        _initialCameraPosition = null;
       });
     }
   }
@@ -195,6 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onMapCreated(gmaps.GoogleMapController controller) {
     _mapController = controller;
+    // Only animate camera if initial position is available
     if (_initialCameraPosition != null) {
       _mapController?.animateCamera(
         gmaps.CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
@@ -231,8 +284,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // Fetch attendance statistics
+    final String currentMonthStart = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime(DateTime.now().year, DateTime.now().month, 1));
+    final String currentMonthEnd = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime(DateTime.now().year, DateTime.now().month + 1, 0));
+
     final ApiResponse<AbsenceStats> statsResponse = await _apiService
-        .getAbsenceStats();
+        .getAbsenceStats(
+          startDate: currentMonthStart,
+          endDate: currentMonthEnd,
+        );
+
     if (statsResponse.statusCode == 200 && statsResponse.data != null) {
       setState(() {
         _absenceStats = statsResponse.data;
@@ -250,10 +314,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _showErrorDialog(
         'Location not available. Please ensure location services are enabled and permissions are granted.',
       );
-      await _determinePosition(); // Try to get location again
-      return;
+      await _determinePosition();
+      if (_currentPosition == null) return;
     }
-    if (_isCheckingInOrOut) return; // Prevent double tap
+    if (_isCheckingInOrOut) return;
 
     setState(() {
       _isCheckingInOrOut = true;
@@ -263,6 +327,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
+      // REVERTED: Changed back to 'HH:mm' for API call as per error message
       final String formattedCheckInTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -281,7 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        _fetchAttendanceData(); // Refresh home after check-in
+        // This will now refetch _todayAbsence which includes jamMasuk/jamKeluar
+        await _fetchAttendanceData();
         MainBottomNavigationBar.refreshAttendanceNotifier.value =
             true; // Signal AttendanceListScreen
       } else {
@@ -311,10 +377,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _showErrorDialog(
         'Location not available. Please ensure location services are enabled and permissions are granted.',
       );
-      await _determinePosition(); // Try to get location again
-      return;
+      await _determinePosition();
+      if (_currentPosition == null) return;
     }
-    if (_isCheckingInOrOut) return; // Prevent double tap
+    if (_isCheckingInOrOut) return;
 
     setState(() {
       _isCheckingInOrOut = true;
@@ -324,6 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
+      // REVERTED: Changed back to 'HH:mm' for API call as per error message
       final String formattedCheckOutTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -341,7 +408,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        _fetchAttendanceData(); // Refresh home after check-out
+        // This will now refetch _todayAbsence which includes jamMasuk/jamKeluar
+        await _fetchAttendanceData();
         MainBottomNavigationBar.refreshAttendanceNotifier.value =
             true; // Signal AttendanceListScreen
       } else {
@@ -367,6 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showErrorDialog(String message) {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -383,25 +452,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Working HR's calculation for cumulative count
   String _calculateWorkingHours() {
+    // If no check-in, always show 00:00:00
     if (_todayAbsence == null || _todayAbsence!.jamMasuk == null) {
-      return '00:00:00'; // No check-in yet or jamMasuk is null
+      return '00:00:00';
     }
 
     final DateTime checkInDateTime = _todayAbsence!.jamMasuk!;
-    DateTime endDateTime;
+    Duration duration;
 
+    // If checked out, show the fixed duration from check-in to check-out
     if (_todayAbsence!.jamKeluar != null) {
-      endDateTime = _todayAbsence!.jamKeluar!;
+      duration = _todayAbsence!.jamKeluar!.difference(checkInDateTime);
     } else {
-      endDateTime = DateTime.now(); // Use current time for live calculation
+      // If not checked out, show the live counting duration from check-in to now
+      duration = DateTime.now().difference(checkInDateTime);
     }
 
-    final Duration duration = endDateTime.difference(checkInDateTime);
+    // Handle negative duration as a safety measure (shouldn't happen with correct data)
+    if (duration.isNegative) {
+      return '00:00:00';
+    }
+
     final int hours = duration.inHours;
     final int minutes = duration.inMinutes.remainder(60);
     final int seconds = duration.inSeconds.remainder(60);
 
+    // Format to HH:mm:ss (this is for display only)
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
@@ -519,7 +597,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _currentTime,
+                      _currentTime, // This is the live clock, always HH:mm:ss
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -544,9 +622,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasCheckedIn
                         ? (hasCheckedOut
-                              ? AppColors.textLight
-                              : AppColors.error)
-                        : AppColors.primary,
+                              ? AppColors
+                                    .textLight // Gray if checked out
+                              : AppColors.error) // Red for check out
+                        : AppColors.primary, // Blue for check in
                     padding: const EdgeInsets.symmetric(
                       horizontal: 25,
                       vertical: 15,
@@ -585,11 +664,11 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildTimeDetail(
-                  // Icons.watch_later_outlined,
                   FaIcon(
                     FontAwesomeIcons.arrowRightFromBracket,
                     color: AppColors.present,
                   ),
+                  // Display seconds for Check In time from API
                   _todayAbsence?.jamMasuk?.toLocal().toString().substring(
                         11,
                         19,
@@ -599,8 +678,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppColors.primary,
                 ),
                 _buildTimeDetail(
-                  // Icons.watch_later_outlined,
                   FaIcon(FontAwesomeIcons.personHiking, color: AppColors.error),
+                  // Display seconds for Check Out time from API
                   _todayAbsence?.jamKeluar?.toLocal().toString().substring(
                         11,
                         19,
@@ -610,9 +689,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppColors.error,
                 ),
                 _buildTimeDetail(
-                  // Icons.watch_later_outlined,
                   FaIcon(FontAwesomeIcons.check, color: AppColors.error),
-                  _calculateWorkingHours(),
+                  _calculateWorkingHours(), // Always HH:mm:ss for display
                   'Working HR\'s',
                   AppColors.warning,
                 ),
@@ -625,7 +703,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTimeDetail(
-    // IconData icon,
     FaIcon iconCustom,
     String time,
     String label,
@@ -634,7 +711,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       children: [
         FaIcon(iconCustom.icon, color: color, size: 28),
-        // Icon(icon, color: color, size: 28),
         const SizedBox(height: 5),
         Text(
           time,
@@ -808,104 +884,112 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            ListView(
-              padding: const EdgeInsets.only(top: 5),
-              children: [
-                // User Profile and Welcome Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: _profilePhotoUrl.isNotEmpty
-                            ? ClipOval(
-                                child: Image.network(
-                                  _profilePhotoUrl.startsWith('http')
-                                      ? _profilePhotoUrl
-                                      : 'https://appabsensi.mobileprojp.com/public/' +
-                                            _profilePhotoUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: AppColors.textLight,
-                                      ),
-                                ),
-                              )
-                            : const CircleAvatar(
-                                backgroundColor: Colors.white,
-                                child: Icon(
-                                  Icons.person,
-                                  size: 30,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Welcome, $_userName',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 5),
-                                Expanded(
-                                  child: Text(
-                                    _location,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+            // Pull-to-refresh indicator wrapping the ListView
+            RefreshIndicator(
+              onRefresh: _onPullToRefresh,
+              color: AppColors.primary, // Color of the refresh indicator
+              backgroundColor:
+                  AppColors.background, // Background of the indicator
+              child: ListView(
+                padding: const EdgeInsets.only(top: 5),
+                children: [
+                  // User Profile and Welcome Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: _profilePhotoUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: Image.network(
+                                    _profilePhotoUrl.startsWith('http')
+                                        ? _profilePhotoUrl
+                                        : 'https://appabsensi.mobileprojp.com/public/' +
+                                              _profilePhotoUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(
+                                              Icons.person,
+                                              size: 40,
+                                              color: AppColors.textLight,
+                                            ),
+                                  ),
+                                )
+                              : const CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 30,
+                                    color: AppColors.primary,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Welcome, $_userName',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      _location,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                // Main Action Card with Lottie animation
-                _buildMainActionCard(hasCheckedIn, hasCheckedOut),
-                const SizedBox(height: 20),
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  indent: 16,
-                  endIndent: 16,
-                  color: AppColors.border,
-                ),
-                const SizedBox(height: 20),
-                // Attendance Summary
-                _buildAttendanceSummary(),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 20),
+                  // Main Action Card with Lottie animation
+                  _buildMainActionCard(hasCheckedIn, hasCheckedOut),
+                  const SizedBox(height: 20),
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 16,
+                    endIndent: 16,
+                    color: AppColors.border,
+                  ),
+                  const SizedBox(height: 20),
+                  // Attendance Summary
+                  _buildAttendanceSummary(),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ],
         ),
