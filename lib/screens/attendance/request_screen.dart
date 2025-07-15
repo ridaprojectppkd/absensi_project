@@ -132,10 +132,7 @@ class _RequestScreenState extends State<RequestScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: (Text(
-          'Permohonan Izin',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        )),
+        title: (Text('Permission Request')),
         centerTitle: true,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
