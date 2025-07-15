@@ -76,9 +76,9 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final authResponse = AuthResponse.fromJson(responseBody);
-        if (authResponse.data != null) {
-          await _saveToken(authResponse.data!.token);
-        }
+        // if (authResponse.data != null) {
+        //   await _saveToken(authResponse.data!.token);
+        // }
         return ApiResponse(
           message: authResponse.message,
           data: authResponse.data,

@@ -435,20 +435,13 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () async {
-              // Add new attendance logic here
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Calendar Section
           Card(
+            color: AppColors.card,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
