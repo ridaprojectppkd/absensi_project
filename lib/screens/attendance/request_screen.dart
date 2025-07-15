@@ -3,6 +3,7 @@ import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:lottie/lottie.dart';
 
 import '../../widgets/custom_date_input_field.dart'; // Your CustomDateInputField
 import '../../widgets/custom_input_field.dart'; // Your CustomInputField
@@ -131,7 +132,11 @@ class _RequestScreenState extends State<RequestScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('New Request'),
+        title: (Text(
+          'Permohonan Izin',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        )),
+        centerTitle: true,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
@@ -140,6 +145,18 @@ class _RequestScreenState extends State<RequestScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Lottie animation before Select Date
+            SizedBox(
+              height: 200,
+              child: Center(
+                child: LottieBuilder.asset(
+                  'assets/lottie/working.json', // Update path as needed
+                  repeat: true,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             // Date Picker using CustomDateInputField
             CustomDateInputField(
               labelText: 'Select Date',

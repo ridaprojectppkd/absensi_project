@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 
-class AppLogo extends StatelessWidget {
-  final double size;
-  const AppLogo({super.key, this.size = 100});
+// class AppLogo extends StatelessWidget {
+//   final double size;
+//   const AppLogo({super.key, this.size = 100});
 
-  @override
-  Widget build(BuildContext context) {
-    return Icon(Icons.access_alarm, size: size, color: Colors.white);
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Icon(Icons.access_alarm, size: size, color: Colors.white);
+//   }
+// }

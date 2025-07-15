@@ -357,8 +357,24 @@ class ApiService {
     }
   }
 
-  Future<ApiResponse<AbsenceStats>> getAbsenceStats() async {
-    final url = Uri.parse('$_baseUrl/absen/stats');
+  Future<ApiResponse<AbsenceStats>> getAbsenceStats({
+    String? startDate,
+    String? endDate,
+    int? year,
+  }) async {
+    final Map<String, String> queryParams = {};
+    if (startDate != null) {
+      queryParams['start'] = startDate;
+    }
+    if (endDate != null) {
+      queryParams['end'] = endDate;
+    }
+    if (year != null) {
+      queryParams['year'] = year.toString();
+    }
+    final url = Uri.parse(
+      '$_baseUrl/absen/stats?start=2025-07-01&end=2025-07-31', // Example date range
+    );
     try {
       final response = await http.get(
         url,
@@ -437,9 +453,11 @@ class ApiService {
       final Map<String, dynamic> responseBody = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        List<Absence> history = (responseBody['data'] as List)
-            .map((e) => Absence.fromJson(e))
-            .toList();
+        List<Absence> history =
+            (responseBody['data'] as List?)
+                ?.map((e) => Absence.fromJson(e))
+                .toList() ??
+            [];
         return ApiResponse(
           message: responseBody['message'],
           data: history,

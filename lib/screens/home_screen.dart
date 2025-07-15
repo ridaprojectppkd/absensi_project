@@ -5,10 +5,13 @@ import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart'; // For reverse geocoding
 import 'package:geolocator/geolocator.dart'; // For geolocation
 import 'package:intl/intl.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Import for Google Maps
+import 'package:google_maps_flutter/google_maps_flutter.dart'
+    as gmaps; // Import for Google Maps
+import 'package:lottie/lottie.dart'; // Import for Lottie animations
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -36,9 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isCheckingInOrOut = false; // To prevent multiple taps during API calls
 
   // Google Maps related state
-  GoogleMapController? _mapController;
-  final Set<Marker> _markers = {};
-  LatLng? _initialCameraPosition; // To store the initial map center
+  gmaps.GoogleMapController? _mapController;
+  Set<gmaps.Marker> get _markers => <gmaps.Marker>{};
+  gmaps.LatLng? _initialCameraPosition; // To store the initial map center
 
   @override
   void initState() {
@@ -148,9 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _currentPosition = position;
         _permissionGranted = true;
-        _initialCameraPosition = LatLng(position.latitude, position.longitude);
+        _initialCameraPosition = gmaps.LatLng(
+          position.latitude,
+          position.longitude,
+        );
         _addMarker(
-          LatLng(position.latitude, position.longitude),
+          gmaps.LatLng(position.latitude, position.longitude),
           'current_location',
           'Your Current Location',
         );
@@ -187,22 +193,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _onMapCreated(GoogleMapController controller) {
+  void _onMapCreated(gmaps.GoogleMapController controller) {
     _mapController = controller;
     if (_initialCameraPosition != null) {
       _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
+        gmaps.CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
       );
     }
   }
 
-  void _addMarker(LatLng position, String markerId, String title) {
+  void _addMarker(gmaps.LatLng position, String markerId, String title) {
     setState(() {
       _markers.add(
-        Marker(
-          markerId: MarkerId(markerId),
+        gmaps.Marker(
+          markerId: gmaps.MarkerId(markerId),
           position: position,
-          infoWindow: InfoWindow(title: title),
+          infoWindow: gmaps.InfoWindow(title: title),
         ),
       );
     });
@@ -413,53 +419,14 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Handle Home button press - This might be for a specific location type
-                      // For now, it's a placeholder.
-                    },
-                    icon: const Icon(Icons.home, color: AppColors.primary),
-                    label: const Text(
-                      'Home',
-                      style: TextStyle(color: AppColors.primary),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Handle Office button press - This might be for a specific location type
-                      // For now, it's a placeholder.
-                    },
-                    icon: const Icon(
-                      Icons.business,
-                      color: AppColors.textLight,
-                    ),
-                    label: const Text(
-                      'Maps',
-                      style: TextStyle(color: AppColors.textLight),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.textLight),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            // Lottie Animation in the center
+            Center(
+              child: Lottie.asset(
+                'assets/lottie/working.json', // Replace with your Lottie file path
+                height: 150,
+                width: 150,
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(height: 20),
             Center(
@@ -473,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: const Text(
-                  'GENERAL SHIFT', // This seems static, keep as is
+                  'GENERAL SHIFT',
                   style: TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
@@ -482,27 +449,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20), // Add spacing before the map
+            const SizedBox(height: 20),
             // --- START: Google Map Widget ---
             if (_permissionGranted && _initialCameraPosition != null)
               Container(
-                height: 200, // Set a fixed height for the map
+                height: 200,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: GoogleMap(
+                  child: gmaps.GoogleMap(
                     onMapCreated: _onMapCreated,
-                    initialCameraPosition: CameraPosition(
+                    initialCameraPosition: gmaps.CameraPosition(
                       target: _initialCameraPosition!,
                       zoom: 15,
                     ),
                     markers: _markers,
-                    myLocationEnabled: true, // Show user's current location dot
-                    myLocationButtonEnabled: true, // Show button to recenter
-                    zoomControlsEnabled: false, // Hide default zoom controls
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    zoomControlsEnabled: false,
                   ),
                 ),
               )
@@ -510,8 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: AppColors
-                      .inputFill, // Using inputFill for a light grey background
+                  color: AppColors.inputFill,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.border, width: 1),
                 ),
@@ -526,14 +492,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        _location, // Display current location status
+                        _location,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: AppColors.textLight,
                           fontSize: 14,
                         ),
                       ),
-                      if (!_permissionGranted) // Offer to re-check permissions
+                      if (!_permissionGranted)
                         Padding(
                           padding: const EdgeInsets.only(top: 10.0),
                           child: ElevatedButton(
@@ -545,9 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-
-            // --- END: Google Map Widget ---
-            const SizedBox(height: 20), // Add spacing after the map
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -573,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 ElevatedButton(
                   onPressed: _isCheckingInOrOut
-                      ? null // Disable button if an operation is in progress
+                      ? null
                       : (hasCheckedIn
                             ? (hasCheckedOut ? null : _handleCheckOut)
                             : _handleCheckIn),
@@ -581,8 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: hasCheckedIn
                         ? (hasCheckedOut
                               ? AppColors.textLight
-                              : AppColors
-                                    .error) // Grey if checked out, Red if checked in (for check-out)
+                              : AppColors.error)
                         : AppColors.primary,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 25,
@@ -615,18 +578,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-            const Divider(
-              color: AppColors.border,
-            ), // Using AppColors.border for consistency
+            const Divider(color: AppColors.border),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildTimeDetail(
-                  Icons.watch_later_outlined,
-                  // Safely access jamMasuk and format it, provide 'N/A' if null
+                  // Icons.watch_later_outlined,
+                  FaIcon(
+                    FontAwesomeIcons.arrowRightFromBracket,
+                    color: AppColors.present,
+                  ),
                   _todayAbsence?.jamMasuk?.toLocal().toString().substring(
                         11,
                         19,
@@ -636,21 +599,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppColors.primary,
                 ),
                 _buildTimeDetail(
-                  Icons.watch_later_outlined,
-                  // Safely access jamKeluar and format it, provide 'N/A' if null
+                  // Icons.watch_later_outlined,
+                  FaIcon(FontAwesomeIcons.personHiking, color: AppColors.error),
                   _todayAbsence?.jamKeluar?.toLocal().toString().substring(
                         11,
                         19,
                       ) ??
                       'N/A',
                   'Check Out',
-                  AppColors.error, // Using AppColors.error for red accent
+                  AppColors.error,
                 ),
                 _buildTimeDetail(
-                  Icons.watch_later_outlined,
+                  // Icons.watch_later_outlined,
+                  FaIcon(FontAwesomeIcons.check, color: AppColors.error),
                   _calculateWorkingHours(),
                   'Working HR\'s',
-                  AppColors.warning, // Using AppColors.warning for orange
+                  AppColors.warning,
                 ),
               ],
             ),
@@ -661,14 +625,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTimeDetail(
-    IconData icon,
+    // IconData icon,
+    FaIcon iconCustom,
     String time,
     String label,
     Color color,
   ) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 28),
+        FaIcon(iconCustom.icon, color: color, size: 28),
+        // Icon(icon, color: color, size: 28),
         const SizedBox(height: 5),
         Text(
           time,
@@ -709,9 +675,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppColors.border,
-                  ), // Using AppColors.border
+                  border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Row(
@@ -743,22 +707,22 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildSummaryCard(
                 'Present',
                 _absenceStats?.totalMasuk ?? 0,
-                AppColors.accentGreen,
-                Icons.check_circle_outline, // Added icon for Present
+                AppColors.present,
+                Icons.check_circle_outline,
               ),
               const SizedBox(width: 10),
               _buildSummaryCard(
                 'Absents',
                 _absenceStats?.totalIzin ?? 0,
-                AppColors.accentRed,
-                Icons.cancel_outlined, // Added icon for Absents
+                AppColors.absent,
+                Icons.cancel_outlined,
               ),
               const SizedBox(width: 10),
               _buildSummaryCard(
                 'Total',
                 _absenceStats?.totalAbsen ?? 0,
-                AppColors.accentOrange,
-                Icons.calendar_month, // Added icon for Total
+                AppColors.total,
+                Icons.calendar_month,
               ),
             ],
           ),
@@ -767,7 +731,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Modified _buildSummaryCard to match _buildActionCard design
   Widget _buildSummaryCard(
     String title,
     int count,
@@ -776,13 +739,11 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Expanded(
       child: Card(
-        color: color, // Use the passed color for the card background
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ), // Larger radius
-        elevation: 6, // Higher elevation
+        color: color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 6,
         child: Padding(
-          padding: const EdgeInsets.all(16.0), // Consistent padding
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -792,26 +753,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon,
                   color: Colors.white.withOpacity(0.3),
                   size: 40,
-                ), // Icon at top right
+                ),
               ),
-              const SizedBox(height: 10), // Spacing after icon
+              const SizedBox(height: 10),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white, // White text for colored background
-                  fontWeight: FontWeight.w500, // Slightly less bold than count
-                  fontSize: 16, // Consistent font size
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 5), // Spacing between title and count
+              const SizedBox(height: 5),
               Align(
-                alignment: Alignment.bottomRight, // Align count to bottom right
+                alignment: Alignment.bottomRight,
                 child: Text(
                   count.toString().padLeft(2, '0'),
                   style: TextStyle(
-                    color: Colors.white, // White text
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 28, // Similar size to action card count
+                    fontSize: 28,
                   ),
                 ),
               ),
@@ -838,7 +799,7 @@ class _HomeScreenState extends State<HomeScreen> {
               left: 0,
               right: 0,
               child: Container(
-                height: 120, // Adjust height as needed
+                height: 120,
                 decoration: const BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.vertical(
@@ -848,9 +809,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ListView(
-              padding: const EdgeInsets.only(
-                top: 5,
-              ), // Adjust top padding to show background
+              padding: const EdgeInsets.only(top: 5),
               children: [
                 // User Profile and Welcome Section
                 Padding(
@@ -932,7 +891,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // 3. Original Main Action Card (Map, Time/Date, Check-in/out)
+                // Main Action Card with Lottie animation
                 _buildMainActionCard(hasCheckedIn, hasCheckedOut),
                 const SizedBox(height: 20),
                 const Divider(
@@ -943,11 +902,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: AppColors.border,
                 ),
                 const SizedBox(height: 20),
-
-                // 4. Attendance Summary
+                // Attendance Summary
                 _buildAttendanceSummary(),
-
-                const SizedBox(height: 20), // Bottom padding
+                const SizedBox(height: 20),
               ],
             ),
           ],

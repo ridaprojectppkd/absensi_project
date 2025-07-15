@@ -1,3 +1,4 @@
+import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/screens/auth/edit_profile_screen.dart';
 import 'package:absensi_project/services/api_services.dart';
@@ -143,13 +144,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: const Center(child: Text('Profile')),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        elevation: 0,
-        automaticallyImplyLeading: false, // Managed by MainBottomNavigationBar
-      ),
+      // appBar: AppBar(
+      //   title: const Center(child: Text('Profile')),
+      //   backgroundColor: AppColors.primary,
+      //   foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      //   elevation: 0,
+      //   automaticallyImplyLeading: false, // Managed by MainBottomNavigationBar
+      // ),
       body: Stack(
         children: [
           // Blue background wave/area at the top
@@ -160,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               height: 150, // Height of the blue background
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+                color: AppColors.primary,
                 borderRadius: const BorderRadius.vertical(
                   bottom: Radius.circular(30),
                 ),
@@ -223,10 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.onPrimary,
-              width: 4,
-            ),
+            border: Border.all(color: AppColors.primary, width: 4),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -238,9 +236,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: CircleAvatar(
             radius: 55, // Larger radius for a prominent profile picture
-            backgroundColor: Theme.of(context)
-                .colorScheme
-                .primary, // MODIFIKASI: Gunakan warna primary dari tema
+            backgroundColor: AppColors
+                .background, // MODIFIKASI: Gunakan warna primary dari tema
             backgroundImage: imageProvider, // Use the determined image provider
             child:
                 imageProvider ==
@@ -260,7 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onBackground,
+            color: AppColors.primary,
           ),
         ),
         const SizedBox(height: 4),
@@ -304,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String jenisKelamin, // Added jenisKelamin parameter
   ) {
     return Card(
-      color: Theme.of(context).cardColor,
+      color: const Color.fromARGB(255, 0, 103, 79),
       margin: const EdgeInsets.symmetric(horizontal: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 4,
@@ -315,10 +312,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildDetailRow('Email ID', email),
             if (batchKe != null) ...[
               // Conditionally add batch info
-              Divider(color: Theme.of(context).dividerColor, height: 20),
+              Divider(color: AppColors.background, height: 20),
               _buildDetailRow('Batch', batchKe),
             ],
-            Divider(color: Theme.of(context).dividerColor, height: 20),
+            Divider(color: AppColors.background, height: 20),
             _buildDetailRow(
               'Jenis Kelamin',
               jenisKelamin,
@@ -337,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           label,
           style: TextStyle(
             fontSize: 16,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: const Color.fromARGB(255, 255, 255, 255),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -345,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           value,
           style: TextStyle(
             fontSize: 16,
-            color: Theme.of(context).colorScheme.onBackground,
+            color: AppColors.background,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -360,23 +357,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           // Notification Toggle
           Card(
-            color: Theme.of(context).cardColor,
+            color: AppColors.primary,
             margin: EdgeInsets.zero, // No extra margin for this card
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             elevation: 4,
             child: ListTile(
-              leading: Icon(
-                Icons.notifications,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              leading: Icon(Icons.notifications, color: AppColors.background),
               title: Text(
                 'Notification',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.background),
               ),
               trailing: Switch.adaptive(
                 value: _notificationEnabled,
@@ -446,28 +437,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 10), // Space between cards
           // Settings Option (now navigates to EditProfileScreen)
           Card(
-            color: Theme.of(context).cardColor,
+            color: AppColors.primary,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             elevation: 4,
             child: ListTile(
-              leading: Icon(
-                Icons.settings,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              leading: Icon(Icons.settings, color: AppColors.background),
               title: Text(
                 'Settings',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.background),
               ),
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 18,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: AppColors.background,
               ),
               onTap: _navigateToEditProfile, // Call the new navigation method
             ),
@@ -475,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 10), // Space between cards
           // Logout Option
           Card(
-            color: Theme.of(context).cardColor,
+            color: AppColors.accentRed,
             margin: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -484,19 +469,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListTile(
               leading: Icon(
                 Icons.logout,
-                color: Theme.of(context).colorScheme.error,
+                color: AppColors.background,
               ), // MODIFIKASI: Gunakan warna error dari tema
               title: Text(
                 'Logout',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
+                  color: AppColors.background,
                   fontSize: 16,
                 ), // MODIFIKASI: Gunakan warna error dari tema
               ),
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 18,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: AppColors.background,
               ),
               onTap: () => _logout(context),
             ),

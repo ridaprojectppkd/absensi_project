@@ -335,9 +335,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Display Batch Name (not a dropdown)
                     _isLoading
                         ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                            ),
+                            // child: CircularProgressIndicator(
+                            //   color: AppColors.primary,
+                            // ),
                           )
                         : Container(
                             padding: const EdgeInsets.symmetric(

@@ -49,6 +49,11 @@ class AppColors {
   static const Color orangeCard = Color(
     0xFFFC8F2B,
   ); // Matches the orange "Maintain" card
+  ////
+  /////////////stats color and chart colors
+  static const Color present = Color(0xFF81E7AF);
+  static const Color absent= Color(0xFFF75A5A);
+  static const Color total = Color(0xFFFFA955);
 
   // Operating Status Colors
   static const Color normalStatus = Color(0xFF1ABC9C); // Green for "Normal"

@@ -5,6 +5,7 @@ import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class AttendanceListScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -22,6 +23,14 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
     DateTime.now().month,
     1,
   );
+
+  // Calendar related state
+  CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
+  Set<DateTime> _attendanceDates = {};
+  Set<DateTime> _presentDates = {};
+  Set<DateTime> _absentDates = {};
+  Set<DateTime> _lateDates = {};
 
   @override
   void initState() {
@@ -55,6 +64,10 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
       if (response.statusCode == 200 && response.data != null) {
         final List<Absence> fetchedAbsences = response.data!;
+
+        // Update calendar markers
+        _updateCalendarMarkers(fetchedAbsences);
+
         fetchedAbsences.sort((a, b) {
           if (a.createdAt == null && b.createdAt == null) return 0;
           if (a.createdAt == null) return 1;
@@ -73,6 +86,36 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       }
       return [];
     }
+  }
+
+  void _updateCalendarMarkers(List<Absence> absences) {
+    final Set<DateTime> attendanceDates = {};
+    final Set<DateTime> presentDates = {};
+    final Set<DateTime> absentDates = {};
+    final Set<DateTime> lateDates = {};
+
+    for (final absence in absences) {
+      final date = absence.attendanceDate ?? absence.createdAt;
+      if (date != null) {
+        final normalizedDate = DateTime(date.year, date.month, date.day);
+        attendanceDates.add(normalizedDate);
+
+        if (absence.status?.toLowerCase() == 'masuk') {
+          presentDates.add(normalizedDate);
+        } else if (absence.status?.toLowerCase() == 'izin') {
+          absentDates.add(normalizedDate);
+        } else if (absence.status?.toLowerCase() == 'late') {
+          lateDates.add(normalizedDate);
+        }
+      }
+    }
+
+    setState(() {
+      _attendanceDates = attendanceDates;
+      _presentDates = presentDates;
+      _absentDates = absentDates;
+      _lateDates = lateDates;
+    });
   }
 
   Future<void> _refreshList() async {
@@ -111,6 +154,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
           newSelectedMonth.month != _selectedMonth.month) {
         setState(() {
           _selectedMonth = newSelectedMonth;
+          _focusedDay = newSelectedMonth;
         });
         _refreshList();
       }
@@ -140,6 +184,21 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       default:
         return Colors.grey.shade100;
     }
+  }
+
+  Widget _buildCalendarLegend(String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(fontSize: 12)),
+      ],
+    );
   }
 
   Widget _buildAttendanceTile(Absence absence) {
@@ -342,6 +401,105 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Calendar Section
+          Card(
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                  TableCalendar(
+                    firstDay: DateTime(2000),
+                    lastDay: DateTime(2100),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    headerStyle: const HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                    ),
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      markersMaxCount: 1,
+                      markerDecoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      outsideDaysVisible: false,
+                    ),
+                    selectedDayPredicate: (day) {
+                      return isSameDay(_focusedDay, day);
+                    },
+                    onDaySelected: (selectedDay, focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      _focusedDay = focusedDay;
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: (context, date, events) {
+                        // Priority: Present > Late > Absent
+                        if (_presentDates.contains(date)) {
+                          return Container(
+                            margin: const EdgeInsets.only(top: 22),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        } else if (_lateDates.contains(date)) {
+                          return Container(
+                            margin: const EdgeInsets.only(top: 22),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        } else if (_absentDates.contains(date)) {
+                          // Ini yang menampilkan penanda oranye untuk izin
+                          return Container(
+                            margin: const EdgeInsets.only(top: 22),
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildCalendarLegend('Present', Colors.green),
+                      _buildCalendarLegend('Absent', Colors.orange),
+                      _buildCalendarLegend('Late', Colors.red),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Month selector
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
