@@ -555,8 +555,8 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildCalendarLegend('Present', Colors.green),
-                      _buildCalendarLegend('Absent', Colors.orange),
-                      _buildCalendarLegend('Late', Colors.red),
+                      // _buildCalendarLegend('Absent', Colors.orange),
+                      // _buildCalendarLegend('Late', Colors.red),
                     ],
                   ),
                   const SizedBox(height: 8),

@@ -497,14 +497,28 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            // Lottie Animation in the center
-            Center(
-              child: Lottie.asset(
-                'assets/lottie/working.json', // Replace with your Lottie file path
-                height: 150,
-                width: 150,
-                fit: BoxFit.contain,
-              ),
+            // Lottie Animation on the left with text
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Lottie.asset(
+                  'assets/lottie/working.json', // Replace with your Lottie file path
+                  height: 170,
+                  width: 170,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'YOUR TIME\nOUR PIORITY',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             Center(
@@ -613,47 +627,63 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: _isCheckingInOrOut
-                      ? null
-                      : (hasCheckedIn
-                            ? (hasCheckedOut ? null : _handleCheckOut)
-                            : _handleCheckIn),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: hasCheckedIn
-                        ? (hasCheckedOut
-                              ? AppColors
-                                    .textLight // Gray if checked out
-                              : AppColors.error) // Red for check out
-                        : AppColors.primary, // Blue for check in
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 25,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 3,
-                  ),
-                  child: _isCheckingInOrOut
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          hasCheckedIn
-                              ? (hasCheckedOut ? 'Checked Out' : 'Check Out')
-                              : 'Check In',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                // Wrap the ElevatedButton with Expanded to prevent overflow
+                Expanded(
+                  // Added Expanded here
+                  child: Padding(
+                    // Added Padding to create some space
+                    padding: const EdgeInsets.only(
+                      left: 10.0,
+                    ), // Adjust padding as needed
+                    child: ElevatedButton(
+                      onPressed: _isCheckingInOrOut
+                          ? null
+                          : (hasCheckedIn
+                                ? (hasCheckedOut ? null : _handleCheckOut)
+                                : _handleCheckIn),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: hasCheckedIn
+                            ? (hasCheckedOut
+                                  ? AppColors
+                                        .textLight // Gray if checked out
+                                  : AppColors.error) // Red for check out
+                            : AppColors.primary, // Blue for check in
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15, // Reduced horizontal padding
+                          vertical: 15,
                         ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 3,
+                      ),
+                      child: _isCheckingInOrOut
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : FittedBox(
+                              // Added FittedBox to ensure text fits
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                hasCheckedIn
+                                    ? (hasCheckedOut
+                                          ? 'Checked Out'
+                                          : 'Check Out')
+                                    : 'Check In',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -1,34 +1,18 @@
 import 'package:absensi_project/screens/attendance/attendance_list_screen.dart';
-import 'package:absensi_project/screens/attendance/request_screen.dart';
 import 'package:absensi_project/screens/auth/profile_screen.dart';
 import 'package:absensi_project/screens/home_screen.dart';
-import 'package:absensi_project/screens/reports/person_report_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainBottomNavigationBar extends StatefulWidget {
   const MainBottomNavigationBar({super.key});
 
   // Declare ValueNotifiers as static final members of the StatefulWidget itself
-  // This makes them globally accessible using MainBottomNavigationBar.notifierName
-  static final ValueNotifier<bool> refreshHomeNotifier = ValueNotifier<bool>(
-    false,
-  );
-  static final ValueNotifier<bool> refreshAttendanceNotifier =
-      ValueNotifier<bool>(false);
-  // ValueNotifier for PersonReportScreen
-  static final ValueNotifier<bool> refreshReportsNotifier = ValueNotifier<bool>(
-    false,
-  );
-  // NEW: ValueNotifier for ProfileScreen
-  static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(
-    false,
-  );
-  static final ValueNotifier<bool> refreshRequestsNotifier =
-      ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshHomeNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshAttendanceNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(false);
 
   @override
-  State<MainBottomNavigationBar> createState() =>
-      _MainBottomNavigationBarState();
+  State<MainBottomNavigationBar> createState() => _MainBottomNavigationBarState();
 }
 
 class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
@@ -36,32 +20,22 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
 
   late final List<Widget> _widgetOptions;
 
-  // NEW: List of items for the custom bottom navigation bar
+  // List of items for the custom bottom navigation bar
   final List<CustomBottomBarItem> _navItems = [
     CustomBottomBarItem(
       icon: Icons.home_rounded,
       label: 'Home',
-      color: Colors.blue, // Warna untuk item Home
+      color: Colors.blue,
     ),
     CustomBottomBarItem(
       icon: Icons.calendar_today_rounded,
       label: 'Attendance',
-      color: Colors.green, // Warna untuk item Attendance
-    ),
-    CustomBottomBarItem(
-      icon: Icons.add,
-      label: 'Requests',
-      color: Colors.pink, // Warna untuk item Requests (index 2)
-    ),
-    CustomBottomBarItem(
-      icon: Icons.bar_chart_rounded,
-      label: 'Reports',
-      color: Colors.orange, // Warna untuk item Reports (index 3)
+      color: Colors.green,
     ),
     CustomBottomBarItem(
       icon: Icons.person_rounded,
       label: 'Profile',
-      color: Colors.purple, // Warna untuk item Profile (index 4)
+      color: Colors.purple,
     ),
   ];
 
@@ -69,80 +43,30 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      // HomeScreen is now the actual content for the first tab.
-      // We pass the refreshHomeNotifier to it so it can listen for external refresh signals.
       HomeScreen(
         refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier,
-      ), // Access via widget name
-      // AttendanceListScreen: Now accepts refreshAttendanceNotifier to listen for updates.
+      ),
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
-      ), // Access via widget name
-      // RequestScreen is still in the IndexedStack, but its tab will now push a new route
-      RequestScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshRequestsNotifier,
-      ), // Access via widget name
-      // Pass the new refreshReportsNotifier to PersonReportScreen
-      PersonReportScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshReportsNotifier,
-      ), // Content for the third tab
-      // FIX: Pass the new refreshProfileNotifier to ProfileScreen
+      ),
       ProfileScreen(
         refreshNotifier: MainBottomNavigationBar.refreshProfileNotifier,
-      ), // Content for the fourth tab
+      ),
     ];
   }
 
-  /// Handles the tap event on a BottomNavigationBarItem.
-  ///
-  /// Updates the [_selectedIndex] to switch the displayed screen in the IndexedStack.
-  void _onItemTapped(int index) async {
-    // Made async to await Navigator.push
-    if (index == 2) {
-      // This is the 'Requests' tab
-      // Do not change _selectedIndex immediately for the IndexedStack.
-      // Instead, push the RequestScreen as a new full-screen route.
-      final result = await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => RequestScreen(
-            refreshNotifier: MainBottomNavigationBar.refreshRequestsNotifier,
-          ),
-        ),
-      );
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
 
-      // After RequestScreen is popped, check the result
-      if (result == true) {
-        // If request was submitted successfully, navigate back to Home tab (index 0)
-        // and trigger a refresh for Home and Attendance.
-        setState(() {
-          _selectedIndex = 0; // Set selected index to Home tab
-        });
-        MainBottomNavigationBar.refreshHomeNotifier.value = true;
-        MainBottomNavigationBar.refreshAttendanceNotifier.value =
-            true; // Also refresh attendance as it might be related
-      }
-      // If result is not true (e.g., user just went back without submitting),
-      // the current tab remains active (the one that was active before pushing RequestScreen).
-    } else {
-      // For all other tabs (Home, Attendance, Reports, Profile)
-      if (_selectedIndex != index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      }
-
-      // Trigger refresh notifiers for the respective tabs
-      if (index == 0) {
-        MainBottomNavigationBar.refreshHomeNotifier.value = true;
-      } else if (index == 1) {
-        MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
-      } else if (index == 3) {
-        // Reports tab (index 3 in _widgetOptions)
-        MainBottomNavigationBar.refreshReportsNotifier.value = true;
-      } else if (index == 4) {
-        // Profile tab (index 4 in _widgetOptions)
-        MainBottomNavigationBar.refreshProfileNotifier.value = true;
-      }
+    // Trigger refresh notifiers for the respective tabs
+    if (index == 0) {
+      MainBottomNavigationBar.refreshHomeNotifier.value = true;
+    } else if (index == 1) {
+      MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
+    } else if (index == 2) {
+      MainBottomNavigationBar.refreshProfileNotifier.value = true;
     }
   }
 
@@ -150,24 +74,20 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _widgetOptions),
-      // START: MODIFIKASI BOTTOM NAVIGATION BAR
       bottomNavigationBar: CustomBottomBarLabelSlide(
         selectedIndex: _selectedIndex,
         onItemSelected: _onItemTapped,
         items: _navItems,
       ),
-      // END: MODIFIKASI BOTTOM NAVIGATION BAR
     );
   }
 }
 
-// START: IMPLEMENTASI KUSTOM BOTTOM_BAR_LABEL_SLIDE
 /// Model untuk item di CustomBottomBarLabelSlide.
 class CustomBottomBarItem {
   final IconData icon;
   final String label;
   final Color color;
-  // Warna spesifik untuk item ini
 
   CustomBottomBarItem({
     required this.icon,
@@ -192,7 +112,7 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 70, // Tinggi tetap untuk navigation bar
+      height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -200,11 +120,12 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
-          ),
+          )
         ],
+      
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
-        ), // Sudut melengkung di atas
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -215,10 +136,9 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
           return Expanded(
             child: GestureDetector(
               onTap: () => onItemSelected(index),
-              behavior: HitTestBehavior
-                  .opaque, // Memastikan seluruh area Expanded bisa di-tap
+              behavior: HitTestBehavior.opaque,
               child: SizedBox(
-                height: double.infinity, // Memenuhi tinggi parent
+                height: double.infinity,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -238,18 +158,11 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
                         duration: const Duration(milliseconds: 300),
                         opacity: isSelected ? 1.0 : 0.0,
                         child: Container(
-                          height: 45, // Tinggi background yang meluncur
-                          width:
-                              (MediaQuery.of(context).size.width /
-                                  items.length) *
-                              0.8, // Lebar disesuaikan
+                          height: 45,
+                          width: (MediaQuery.of(context).size.width / items.length) * 0.8,
                           decoration: BoxDecoration(
-                            color: item.color.withOpacity(
-                              0.2,
-                            ), // Warna background dengan opacity
-                            borderRadius: BorderRadius.circular(
-                              25,
-                            ), // Sudut melengkung
+                            color: item.color.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(25),
                           ),
                         ),
                       ),
@@ -267,9 +180,7 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           child: SizedBox(
-                            height: isSelected
-                                ? 20
-                                : 0, // Tinggi label saat muncul/hilang
+                            height: isSelected ? 20 : 0,
                             child: AnimatedOpacity(
                               duration: const Duration(milliseconds: 300),
                               opacity: isSelected ? 1.0 : 0.0,
