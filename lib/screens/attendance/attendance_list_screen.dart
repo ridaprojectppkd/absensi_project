@@ -398,6 +398,28 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    size: 16,
+                    color: textColor.withOpacity(0.8),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      absence.checkInAddress ?? 'Location not available',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: textColor.withOpacity(0.8),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ],
         ),
@@ -441,12 +463,13 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         children: [
           // Calendar Section
           Card(
-            color: AppColors.card,
+            color: Colors.green.shade50,
             margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.green.shade300, width: 1.5),
             ),
-            elevation: 2,
+            elevation: 0,
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
