@@ -497,14 +497,28 @@
 //           crossAxisAlignment: CrossAxisAlignment.start,
 //           children: [
 //             const SizedBox(height: 10),
-//             // Lottie Animation in the center
-//             Center(
-//               child: Lottie.asset(
-//                 'assets/lottie/working.json', // Replace with your Lottie file path
-//                 height: 150,
-//                 width: 150,
-//                 fit: BoxFit.contain,
-//               ),
+//             // Lottie Animation on the left with text
+//             Row(
+//               crossAxisAlignment: CrossAxisAlignment.center,
+//               children: [
+//                 Lottie.asset(
+//                   'assets/lottie/working.json', // Replace with your Lottie file path
+//                   height: 170,
+//                   width: 170,
+//                   fit: BoxFit.contain,
+//                 ),
+//                 const SizedBox(width: 10),
+//                 const Expanded(
+//                   child: Text(
+//                     'YOUR TIME\nOUR PIORITY',
+//                     style: TextStyle(
+//                       fontSize: 20,
+//                       fontWeight: FontWeight.bold,
+//                       color: AppColors.primary,
+//                     ),
+//                   ),
+//                 ),
+//               ],
 //             ),
 //             const SizedBox(height: 20),
 //             Center(

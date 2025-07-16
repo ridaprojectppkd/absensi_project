@@ -1,3 +1,4 @@
+import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/screens/attendance/attendance_list_screen.dart';
 import 'package:absensi_project/screens/auth/profile_screen.dart';
 import 'package:absensi_project/screens/home_screen.dart';
@@ -7,12 +8,18 @@ class MainBottomNavigationBar extends StatefulWidget {
   const MainBottomNavigationBar({super.key});
 
   // Declare ValueNotifiers as static final members of the StatefulWidget itself
-  static final ValueNotifier<bool> refreshHomeNotifier = ValueNotifier<bool>(false);
-  static final ValueNotifier<bool> refreshAttendanceNotifier = ValueNotifier<bool>(false);
-  static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshHomeNotifier = ValueNotifier<bool>(
+    false,
+  );
+  static final ValueNotifier<bool> refreshAttendanceNotifier =
+      ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshProfileNotifier = ValueNotifier<bool>(
+    false,
+  );
 
   @override
-  State<MainBottomNavigationBar> createState() => _MainBottomNavigationBarState();
+  State<MainBottomNavigationBar> createState() =>
+      _MainBottomNavigationBarState();
 }
 
 class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
@@ -35,7 +42,7 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
     CustomBottomBarItem(
       icon: Icons.person_rounded,
       label: 'Profile',
-      color: Colors.purple,
+      color: Colors.yellow,
     ),
   ];
 
@@ -43,9 +50,7 @@ class _MainBottomNavigationBarState extends State<MainBottomNavigationBar> {
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      HomeScreen(
-        refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier,
-      ),
+      HomeScreen(refreshNotifier: MainBottomNavigationBar.refreshHomeNotifier),
       AttendanceListScreen(
         refreshNotifier: MainBottomNavigationBar.refreshAttendanceNotifier,
       ),
@@ -114,18 +119,16 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
     return Container(
       height: 70,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.primary,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
-          )
+          ),
         ],
-      
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -159,7 +162,10 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
                         opacity: isSelected ? 1.0 : 0.0,
                         child: Container(
                           height: 45,
-                          width: (MediaQuery.of(context).size.width / items.length) * 0.8,
+                          width:
+                              (MediaQuery.of(context).size.width /
+                                  items.length) *
+                              0.8,
                           decoration: BoxDecoration(
                             color: item.color.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(25),
@@ -173,7 +179,9 @@ class CustomBottomBarLabelSlide extends StatelessWidget {
                       children: [
                         Icon(
                           item.icon,
-                          color: isSelected ? item.color : Colors.grey.shade600,
+                          color: isSelected
+                              ? item.color
+                              : const Color.fromARGB(255, 255, 255, 255),
                           size: 26,
                         ),
                         AnimatedSize(

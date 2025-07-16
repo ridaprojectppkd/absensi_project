@@ -432,6 +432,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                     ),
+                    // Tambahkan copyright text di bawah ini
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 20.0),
+                        child: Opacity(
+                          opacity: 0.6,
+                          child: Text(
+                            '© Rida_AttendlyApps',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textLight,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -1,16 +1,15 @@
 import 'dart:async';
-
 import 'package:absensi_project/constants/app_colors.dart';
 import 'package:absensi_project/models/app_model.dart';
 import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/services/api_services.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:geocoding/geocoding.dart'; // For reverse geocoding
-import 'package:geolocator/geolocator.dart'; // For geolocation
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
-import 'package:lottie/lottie.dart'; // Import for Lottie animations
+import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueNotifier<bool> refreshNotifier;
@@ -30,33 +29,28 @@ class _HomeScreenState extends State<HomeScreen> {
   String _profilePhotoUrl = '';
   Timer? _timer;
 
-  AbsenceToday? _todayAbsence; // Changed from AttendanceModel to AbsenceToday
-  AbsenceStats? _absenceStats; // New state for attendance statistics
+  AbsenceToday? _todayAbsence;
+  AbsenceStats? _absenceStats;
 
   Position? _currentPosition;
   bool _permissionGranted = false;
-  bool _isCheckingInOrOut = false; // To prevent multiple taps during API calls
+  bool _isCheckingInOrOut = false;
 
-  // Google Maps related state
   gmaps.GoogleMapController? _mapController;
   Set<gmaps.Marker> get _markers => <gmaps.Marker>{};
-  gmaps.LatLng? _initialCameraPosition; // To store the initial map center
+  gmaps.LatLng? _initialCameraPosition;
 
   @override
   void initState() {
     super.initState();
     _updateDateTime();
-    _initData(); // Combined initial data loading into a single method
+    _initData();
     widget.refreshNotifier.addListener(_handleRefreshSignal);
 
-    // This timer will now also trigger a setState to update the working hours
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return; // Ensure widget is still mounted
+      if (!mounted) return;
       setState(() {
-        _updateDateTime(); // Update current date/time
-        // The working hours are implicitly updated because _calculateWorkingHours
-        // depends on _todayAbsence (which might be updated by API)
-        // and DateTime.now() which changes every second.
+        _updateDateTime();
       });
     });
   }
@@ -64,36 +58,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _timer?.cancel();
-    _mapController?.dispose(); // Dispose map controller
+    _mapController?.dispose();
     widget.refreshNotifier.removeListener(_handleRefreshSignal);
     super.dispose();
   }
 
-  // New method to initialize all data fetching
   Future<void> _initData() async {
-    await _determinePosition(); // Fetch location first
+    await _determinePosition();
     await _loadUserData();
-    await _fetchAttendanceData(); // Then fetch attendance data
+    await _fetchAttendanceData();
   }
 
   void _handleRefreshSignal() {
     if (widget.refreshNotifier.value) {
-      _initData(); // Re-fetch all data for the home screen on refresh signal
-      widget.refreshNotifier.value = false; // Reset the notifier after handling
+      _initData();
+      widget.refreshNotifier.value = false;
     }
   }
 
-  // --- Pull to Refresh Logic ---
   Future<void> _onPullToRefresh() async {
-    await _initData(); // Call the combined initialization logic
+    await _initData();
     if (mounted) {
-      // Ensure widget is still mounted before showing SnackBar
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Data refreshed!')));
     }
   }
-  // --- End Pull to Refresh Logic ---
 
   Future<void> _loadUserData() async {
     final ApiResponse<User> response = await _apiService.getProfile();
@@ -103,26 +93,22 @@ class _HomeScreenState extends State<HomeScreen> {
         _profilePhotoUrl = response.data!.profile_photo ?? '';
       });
     } else {
-      print('Failed to load user profile: ${response.message}');
       setState(() {
-        _userName = 'User'; // Default if profile fails
-        _profilePhotoUrl = ''; // Clear photo if error
+        _userName = 'User';
+        _profilePhotoUrl = '';
       });
     }
   }
 
   void _updateDateTime() {
     _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
-    _currentTime = DateFormat(
-      'HH:mm:ss',
-    ).format(DateTime.now()); // KEEP seconds for live clock
+    _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
   }
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (mounted) {
@@ -131,8 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _location = 'Location services disabled';
         _permissionGranted = false;
-        _currentPosition = null; // Ensure position is null if services disabled
-        _initialCameraPosition = null; // Clear map if services disabled
+        _currentPosition = null;
+        _initialCameraPosition = null;
       });
       return;
     }
@@ -149,9 +135,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _location = 'Location permissions denied';
           _permissionGranted = false;
-          _currentPosition =
-              null; // Ensure position is null if permission denied
-          _initialCameraPosition = null; // Clear map if permission denied
+          _currentPosition = null;
+          _initialCameraPosition = null;
         });
         return;
       }
@@ -166,9 +151,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _location = 'Location permissions permanently denied';
         _permissionGranted = false;
-        _currentPosition =
-            null; // Ensure position is null if permission denied forever
-        _initialCameraPosition = null; // Clear map if permission denied forever
+        _currentPosition = null;
+        _initialCameraPosition = null;
       });
       return;
     }
@@ -176,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10), // Add a timeout for location
+        timeLimit: const Duration(seconds: 10),
       );
       setState(() {
         _currentPosition = position;
@@ -185,7 +169,6 @@ class _HomeScreenState extends State<HomeScreen> {
           position.latitude,
           position.longitude,
         );
-        // Clear existing markers before adding new one
         _markers.clear();
         _addMarker(
           gmaps.LatLng(position.latitude, position.longitude),
@@ -193,7 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Your Current Location',
         );
       });
-      // If map controller is already initialized, animate camera to new position
       if (_mapController != null && _initialCameraPosition != null) {
         _mapController?.animateCamera(
           gmaps.CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
@@ -213,7 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _initialCameraPosition = null;
       });
     } catch (e) {
-      print('Error getting current location: $e');
       if (mounted) {
         _showErrorDialog('Failed to get current location: $e');
       }
@@ -238,7 +219,6 @@ class _HomeScreenState extends State<HomeScreen> {
             "${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}, ${place.country}";
       });
     } catch (e) {
-      print('Error getting address from coordinates: $e');
       setState(() {
         _location = 'Address not found';
       });
@@ -247,7 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onMapCreated(gmaps.GoogleMapController controller) {
     _mapController = controller;
-    // Only animate camera if initial position is available
     if (_initialCameraPosition != null) {
       _mapController?.animateCamera(
         gmaps.CameraUpdate.newLatLngZoom(_initialCameraPosition!, 15),
@@ -268,7 +247,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchAttendanceData() async {
-    // Fetch today's absence record
     final ApiResponse<AbsenceToday> todayAbsenceResponse = await _apiService
         .getAbsenceToday();
     if (todayAbsenceResponse.statusCode == 200 &&
@@ -277,13 +255,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _todayAbsence = todayAbsenceResponse.data;
       });
     } else {
-      print('Failed to get today\'s absence: ${todayAbsenceResponse.message}');
       setState(() {
-        _todayAbsence = null; // Reset if no record or error
+        _todayAbsence = null;
       });
     }
 
-    // Fetch attendance statistics
     final String currentMonthStart = DateFormat(
       'yyyy-MM-dd',
     ).format(DateTime(DateTime.now().year, DateTime.now().month, 1));
@@ -302,9 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _absenceStats = statsResponse.data;
       });
     } else {
-      print('Failed to get absence stats: ${statsResponse.message}');
       setState(() {
-        _absenceStats = null; // Reset if no stats or error
+        _absenceStats = null;
       });
     }
   }
@@ -327,7 +302,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // REVERTED: Changed back to 'HH:mm' for API call as per error message
       final String formattedCheckInTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -346,10 +320,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        // This will now refetch _todayAbsence which includes jamMasuk/jamKeluar
         await _fetchAttendanceData();
-        MainBottomNavigationBar.refreshAttendanceNotifier.value =
-            true; // Signal AttendanceListScreen
+        MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
       } else {
         String errorMessage = response.message;
         if (response.errors != null) {
@@ -390,7 +362,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final String formattedAttendanceDate = DateFormat(
         'yyyy-MM-dd',
       ).format(DateTime.now());
-      // REVERTED: Changed back to 'HH:mm' for API call as per error message
       final String formattedCheckOutTime = DateFormat(
         'HH:mm',
       ).format(DateTime.now());
@@ -408,10 +379,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(response.message)));
-        // This will now refetch _todayAbsence which includes jamMasuk/jamKeluar
         await _fetchAttendanceData();
-        MainBottomNavigationBar.refreshAttendanceNotifier.value =
-            true; // Signal AttendanceListScreen
+        MainBottomNavigationBar.refreshAttendanceNotifier.value = true;
       } else {
         String errorMessage = response.message;
         if (response.errors != null) {
@@ -452,9 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Working HR's calculation for cumulative count
   String _calculateWorkingHours() {
-    // If no check-in, always show 00:00:00
     if (_todayAbsence == null || _todayAbsence!.jamMasuk == null) {
       return '00:00:00';
     }
@@ -462,15 +429,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final DateTime checkInDateTime = _todayAbsence!.jamMasuk!;
     Duration duration;
 
-    // If checked out, show the fixed duration from check-in to check-out
     if (_todayAbsence!.jamKeluar != null) {
       duration = _todayAbsence!.jamKeluar!.difference(checkInDateTime);
     } else {
-      // If not checked out, show the live counting duration from check-in to now
       duration = DateTime.now().difference(checkInDateTime);
     }
 
-    // Handle negative duration as a safety measure (shouldn't happen with correct data)
     if (duration.isNegative) {
       return '00:00:00';
     }
@@ -479,11 +443,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final int minutes = duration.inMinutes.remainder(60);
     final int seconds = duration.inSeconds.remainder(60);
 
-    // Format to HH:mm:ss (this is for display only)
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
-
-  // --- Widget Builders ---
 
   Widget _buildMainActionCard(bool hasCheckedIn, bool hasCheckedOut) {
     return Card(
@@ -497,12 +458,13 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
+            
             // Lottie Animation on the left with text
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Lottie.asset(
-                  'assets/lottie/working.json', // Replace with your Lottie file path
+                  'assets/lottie/working.json',
                   height: 170,
                   width: 170,
                   fit: BoxFit.contain,
@@ -542,7 +504,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // --- START: Google Map Widget ---
             if (_permissionGranted && _initialCameraPosition != null)
               Container(
                 height: 200,
@@ -611,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _currentTime, // This is the live clock, always HH:mm:ss
+                      _currentTime,
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -627,14 +588,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                // Wrap the ElevatedButton with Expanded to prevent overflow
                 Expanded(
-                  // Added Expanded here
                   child: Padding(
-                    // Added Padding to create some space
-                    padding: const EdgeInsets.only(
-                      left: 10.0,
-                    ), // Adjust padding as needed
+                    padding: const EdgeInsets.only(left: 10.0),
                     child: ElevatedButton(
                       onPressed: _isCheckingInOrOut
                           ? null
@@ -644,12 +600,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: hasCheckedIn
                             ? (hasCheckedOut
-                                  ? AppColors
-                                        .textLight // Gray if checked out
-                                  : AppColors.error) // Red for check out
-                            : AppColors.primary, // Blue for check in
+                                  ? AppColors.textLight
+                                  : AppColors.error)
+                            : AppColors.primary,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 15, // Reduced horizontal padding
+                          horizontal: 15,
                           vertical: 15,
                         ),
                         shape: RoundedRectangleBorder(
@@ -667,7 +622,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             )
                           : FittedBox(
-                              // Added FittedBox to ensure text fits
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 hasCheckedIn
@@ -698,7 +652,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     FontAwesomeIcons.arrowRightFromBracket,
                     color: AppColors.present,
                   ),
-                  // Display seconds for Check In time from API
                   _todayAbsence?.jamMasuk?.toLocal().toString().substring(
                         11,
                         19,
@@ -709,7 +662,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 _buildTimeDetail(
                   FaIcon(FontAwesomeIcons.personHiking, color: AppColors.error),
-                  // Display seconds for Check Out time from API
                   _todayAbsence?.jamKeluar?.toLocal().toString().substring(
                         11,
                         19,
@@ -720,7 +672,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 _buildTimeDetail(
                   FaIcon(FontAwesomeIcons.check, color: AppColors.error),
-                  _calculateWorkingHours(), // Always HH:mm:ss for display
+                  _calculateWorkingHours(),
                   'Working HR\'s',
                   AppColors.warning,
                 ),
@@ -833,6 +785,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        // Copyright text added here
+        Padding(
+          padding: const EdgeInsets.only(top: 10.0),
+          child: Center(
+            child: Opacity(
+              opacity: 0.6,
+              child: Text(
+                '© Rida_AttendlyApps',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textLight,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -899,7 +868,6 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Background primary color top section
             Positioned(
               top: 0,
               left: 0,
@@ -914,16 +882,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // Pull-to-refresh indicator wrapping the ListView
             RefreshIndicator(
               onRefresh: _onPullToRefresh,
-              color: AppColors.primary, // Color of the refresh indicator
-              backgroundColor:
-                  AppColors.background, // Background of the indicator
+              color: AppColors.primary,
+              backgroundColor: AppColors.background,
               child: ListView(
                 padding: const EdgeInsets.only(top: 5),
                 children: [
-                  // User Profile and Welcome Section
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Row(
@@ -1004,7 +969,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Main Action Card with Lottie animation
                   _buildMainActionCard(hasCheckedIn, hasCheckedOut),
                   const SizedBox(height: 20),
                   const Divider(
@@ -1015,7 +979,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppColors.border,
                   ),
                   const SizedBox(height: 20),
-                  // Attendance Summary
                   _buildAttendanceSummary(),
                   const SizedBox(height: 20),
                 ],

@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                 Center(
+                Center(
                   child: Lottie.asset(
                     'assets/lottie/Welcome.json',
                     width: 200,
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 // Forgot Password
                 Align(
-                  alignment: Alignment.center,
+                  alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.pushNamed(
                       context,
@@ -199,6 +199,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ],
+                ),
+                // Tambahkan copyright text di bawah ini
+                const SizedBox(height: 20),
+                Center(
+                  child: Opacity(
+                    opacity: 0.6,
+                    child: Text(
+                      '© Rida_AttendlyApps',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),

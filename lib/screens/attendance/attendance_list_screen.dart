@@ -27,20 +27,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   // Calendar related state
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
-  Set<DateTime> _attendanceDates = {};
   Set<DateTime> _presentDates = {};
-  Set<DateTime> _absentDates = {};
-  Set<DateTime> _lateDates = {};
-
-  // Debugging counts to display on UI
-  int _debugPresentCount = 0;
-  int _debugAbsentCount = 0;
-  int _debugLateCount = 0;
 
   @override
   void initState() {
     super.initState();
-    print('AttendanceListScreen: initState called.');
     _attendanceFuture = _fetchAndFilterAttendances();
     widget.refreshNotifier.addListener(_handleRefreshSignal);
   }
@@ -48,13 +39,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   @override
   void dispose() {
     widget.refreshNotifier.removeListener(_handleRefreshSignal);
-    print('AttendanceListScreen: dispose called.');
     super.dispose();
   }
 
   void _handleRefreshSignal() {
     if (widget.refreshNotifier.value) {
-      print('AttendanceListScreen: Refresh signal received. Refreshing list.');
       _refreshList();
       widget.refreshNotifier.value = false;
     }
@@ -66,18 +55,12 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       'yyyy-MM-dd',
     ).format(DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0));
 
-    print('Fetching attendance for: $startDate to $endDate');
-
     try {
       final ApiResponse<List<Absence>> response = await _apiService
           .getAbsenceHistory(startDate: startDate, endDate: endDate);
 
       if (response.statusCode == 200 && response.data != null) {
         final List<Absence> fetchedAbsences = response.data!;
-        print('API Response Status Code: ${response.statusCode}');
-        print('Fetched ${fetchedAbsences.length} attendance records.');
-
-        // Update calendar markers
         _updateCalendarMarkers(fetchedAbsences);
 
         fetchedAbsences.sort((a, b) {
@@ -88,13 +71,9 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
         });
         return fetchedAbsences;
       } else {
-        print(
-          'API Error: Status Code ${response.statusCode}, Message: ${response.message}',
-        );
         throw Exception(response.message);
       }
     } catch (e) {
-      print('Error fetching attendance: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load attendance: $e')),
@@ -105,62 +84,21 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
   }
 
   void _updateCalendarMarkers(List<Absence> absences) {
-    final Set<DateTime> attendanceDates = {};
     final Set<DateTime> presentDates = {};
-    final Set<DateTime> absentDates = {};
-    final Set<DateTime> lateDates = {};
-
-    print('Updating calendar markers for ${absences.length} absences.');
 
     for (final absence in absences) {
       final date = absence.attendanceDate ?? absence.createdAt;
-      if (date != null) {
-        // Normalize date to remove time component for comparison
-        // Ensure this creates a local DateTime with time at midnight
-        final normalizedDate = DateTime(date.year, date.month, date.day);
-        attendanceDates.add(normalizedDate);
-
-        print(
-          'Processing record: Date: $normalizedDate, Status: ${absence.status}',
-        );
-
-        if (absence.status?.toLowerCase() == 'masuk') {
-          presentDates.add(normalizedDate);
-          print('  -> Added to presentDates');
-        } else if (absence.status?.toLowerCase() == 'izin') {
-          absentDates.add(normalizedDate);
-          print('  -> Added to absentDates (Izin)');
-        } else if (absence.status?.toLowerCase() == 'late') {
-          lateDates.add(normalizedDate);
-          print('  -> Added to lateDates');
-        } else {
-          print('  -> Status not recognized or null: ${absence.status}');
-        }
-      } else {
-        print('  -> Absence record has null attendanceDate and createdAt.');
+      if (date != null && absence.status?.toLowerCase() == 'masuk') {
+        presentDates.add(DateTime(date.year, date.month, date.day));
       }
     }
 
     setState(() {
-      _attendanceDates = attendanceDates;
       _presentDates = presentDates;
-      _absentDates = absentDates;
-      _lateDates = lateDates;
-
-      // Update debug counts for UI display
-      _debugPresentCount = _presentDates.length;
-      _debugAbsentCount = _absentDates.length;
-      _debugLateCount = _lateDates.length;
-
-      print('Marker sets updated:');
-      print('  Present Dates Count: ${_presentDates.length}');
-      print('  Absent Dates Count: ${_absentDates.length}');
-      print('  Late Dates Count: ${_lateDates.length}');
     });
   }
 
   Future<void> _refreshList() async {
-    print('Refreshing attendance list...');
     setState(() {
       _attendanceFuture = _fetchAndFilterAttendances();
     });
@@ -194,15 +132,11 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       final DateTime newSelectedMonth = DateTime(picked.year, picked.month, 1);
       if (newSelectedMonth.year != _selectedMonth.year ||
           newSelectedMonth.month != _selectedMonth.month) {
-        print(
-          'Month changed to: ${DateFormat('MMMM yyyy').format(newSelectedMonth)}',
-        );
         setState(() {
           _selectedMonth = newSelectedMonth;
-          _focusedDay =
-              newSelectedMonth; // Keep focused day within the new month
+          _focusedDay = newSelectedMonth;
         });
-        _refreshList(); // Trigger refresh for new month
+        _refreshList();
       }
     }
   }
@@ -219,7 +153,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
 
   Color _getBackgroundColor(String? status) {
     if (status == null) return Colors.grey.shade100;
-
     switch (status.toLowerCase()) {
       case 'izin':
         return Colors.orange.shade50;
@@ -274,7 +207,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Date Column
                 Column(
                   children: [
                     Text(
@@ -299,8 +231,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   ],
                 ),
                 const SizedBox(width: 16),
-
-                // Main Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,7 +273,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                         ),
                       ] else ...[
                         Text(
-                          '9:00 AM', // Placeholder for Izin, adjust if needed
+                          '9:00 AM',
                           style: TextStyle(
                             fontSize: 14,
                             color: textColor.withOpacity(0.8),
@@ -353,8 +283,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                     ],
                   ),
                 ),
-
-                // Status Pill
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -378,7 +306,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                 ),
               ],
             ),
-
             if (!isRequestType) ...[
               const SizedBox(height: 8),
               Row(
@@ -453,7 +380,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Attendance Details'),
+        title: const Text('Attendance History'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -461,7 +388,6 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Calendar Section
           Card(
             color: Colors.green.shade50,
             margin: const EdgeInsets.all(16),
@@ -502,32 +428,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                       return isSameDay(_focusedDay, day);
                     },
                     onDaySelected: (selectedDay, focusedDay) {
-                      print(
-                        'Day selected: $selectedDay, Focused Day: $focusedDay',
-                      );
                       setState(() {
                         _focusedDay = focusedDay;
                       });
                     },
                     onPageChanged: (focusedDay) {
-                      print('Calendar page changed to: $focusedDay');
                       _focusedDay = focusedDay;
                     },
                     calendarBuilders: CalendarBuilders(
                       markerBuilder: (context, date, events) {
-                        // Normalize the date received from TableCalendar for comparison
-                        // This ensures the date has no time component and is a local DateTime
                         final normalizedCalendarDate = DateTime(
                           date.year,
                           date.month,
                           date.day,
                         );
 
-                        // Priority: Present > Late > Absent
                         if (_presentDates.contains(normalizedCalendarDate)) {
-                          print(
-                            '  Marker for $normalizedCalendarDate: Present (Green)',
-                          );
                           return Container(
                             margin: const EdgeInsets.only(top: 22),
                             width: 6,
@@ -537,57 +453,18 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                               shape: BoxShape.circle,
                             ),
                           );
-                        } else if (_lateDates.contains(
-                          normalizedCalendarDate,
-                        )) {
-                          print(
-                            '  Marker for $normalizedCalendarDate: Late (Red)',
-                          );
-                          return Container(
-                            margin: const EdgeInsets.only(top: 22),
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                          );
-                        } else if (_absentDates.contains(
-                          normalizedCalendarDate,
-                        )) {
-                          print(
-                            '  Marker for $normalizedCalendarDate: Absent/Izin (Orange)',
-                          );
-                          return Container(
-                            margin: const EdgeInsets.only(top: 22),
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Colors.orange,
-                              shape: BoxShape.circle,
-                            ),
-                          );
                         }
-                        print('  Marker for $normalizedCalendarDate: None');
                         return null;
                       },
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildCalendarLegend('Present', Colors.green),
-                      // _buildCalendarLegend('Absent', Colors.orange),
-                      // _buildCalendarLegend('Late', Colors.red),
-                    ],
-                  ),
+                  _buildCalendarLegend('Present', Colors.green),
                   const SizedBox(height: 8),
                 ],
               ),
             ),
           ),
-          // Month selector
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
@@ -601,7 +478,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: AppColors.primary,
                   ),
                 ),
                 GestureDetector(
@@ -639,6 +516,22 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Center(
+              child: Opacity(
+                opacity: 0.6,
+                child: Text(
+                  '© Rida_AttendlyApps',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textLight,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshList,
@@ -646,22 +539,15 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                 future: _attendanceFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    print('FutureBuilder: ConnectionState.waiting');
                     return const Center(child: CircularProgressIndicator());
                   }
 
                   if (snapshot.hasError) {
-                    print('FutureBuilder: Has Error: ${snapshot.error}');
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
                   final attendances = snapshot.data ?? [];
-                  print(
-                    'FutureBuilder: Data loaded. Attendance count: ${attendances.length}',
-                  );
-
                   if (attendances.isEmpty) {
-                    print('FutureBuilder: No attendance records found.');
                     return Center(
                       child: Text(
                         'No attendance records found for ${DateFormat('MMMM').format(_selectedMonth)}.',
