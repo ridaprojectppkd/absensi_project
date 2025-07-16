@@ -101,7 +101,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _updateDateTime() {
-    _currentDate = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
+    _currentDate = DateFormat(
+      'EEEE, dd MMMM yyyy',
+      'id_ID',
+    ).format(DateTime.now());
     _currentTime = DateFormat('HH:mm:ss').format(DateTime.now());
   }
 
@@ -458,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            
+
             // Lottie Animation on the left with text
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -492,14 +495,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.green.shade100,
                   borderRadius: BorderRadius.circular(5),
-                ),
-                child: const Text(
-                  'GENERAL SHIFT',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
                 ),
               ),
             ),
@@ -739,7 +734,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     Text(
-                      DateFormat('MMM').format(DateTime.now()).toUpperCase(),
+                      DateFormat(
+                        'MMM',
+                        'id_ID',
+                      ).format(DateTime.now()).toUpperCase(),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textDark,

@@ -211,7 +211,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
                   children: [
                     Text(
                       displayDate != null
-                          ? DateFormat('d').format(displayDate)
+                          ? DateFormat('d', 'id_ID').format(displayDate)
                           : '--',
                       style: TextStyle(
                         fontSize: 20,

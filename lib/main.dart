@@ -5,10 +5,13 @@ import 'package:absensi_project/screens/main_bottom_navigator_bar.dart';
 import 'package:absensi_project/screens/forgot_password.dart.dart';
 import 'package:absensi_project/screens/reset_password_screen.dart';
 import 'package:absensi_project/screens/splashsceen.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:flutter/material.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
   runApp(const MyApp());
 }
 
